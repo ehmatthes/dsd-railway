@@ -78,6 +78,7 @@ class PlatformDeployer:
         self._prep_automate_all()
 
         # Configure project for deployment to Railway
+        self._modify_settings()
 
         self._conclude_automate_all()
         self._show_success_message()
@@ -98,6 +99,12 @@ class PlatformDeployer:
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
         pass
+
+
+    def _modify_settings(self):
+        # Add Railway-specific settings.
+        template_path = self.templates_path / "settings.py"
+        plugin_utils.modify_settings_file(template_path)
 
 
     def _conclude_automate_all(self):
