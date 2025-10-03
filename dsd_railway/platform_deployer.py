@@ -14,6 +14,7 @@ Add a new file to the user's project, using a template:
 """
 
 import sys, os, re, json
+import subprocess
 from pathlib import Path
 
 from django.utils.safestring import mark_safe
