@@ -15,6 +15,7 @@ Add a new file to the user's project, using a template:
 
 import sys, os, re, json
 import subprocess
+import time
 import webbrowser
 from pathlib import Path
 
@@ -162,7 +163,16 @@ class PlatformDeployer:
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
 
+        # Wait {pause} before opening.
+        pause = 20
+        msg = f"  Waiting {pause}s for deployment to finish..."
+        plugin_utils.write_output(msg)
+
         webbrowser.open(self.deployed_url)
+
+        msg = f"  If you get an error page, refresh the browser in a minute or two."
+        plugin_utils.write_output(msg)
+
 
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.

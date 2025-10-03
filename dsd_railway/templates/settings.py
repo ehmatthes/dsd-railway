@@ -4,6 +4,8 @@
 import os
 
 if os.environ.get("RAILWAY_PROJECT_NAME", ""):
+    DEBUG = False
+    
     # Configure a Postgres db.
     DATABASES = {
         'default': {
