@@ -15,6 +15,7 @@ Add a new file to the user's project, using a template:
 
 import sys, os, re, json
 import subprocess
+import webbrowser
 from pathlib import Path
 
 from django.utils.safestring import mark_safe
@@ -141,25 +142,27 @@ class PlatformDeployer:
         msg = "  Adding a database..."
         plugin_utils.write_output(msg)
 
-        cmd = "railway add"
-        output = run_quick_command(cmd)
-        plugin_utils.write_output(output, write_to_console=False)
+        cmd = "railway add --database postgres"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
 
         # Set env vars.
         self._set_env_vars()
 
         # Redeploy.
-        cmd = "railway redeploy"
-        plugin_utils.run_slow_command(cmd)
+        cmd = "railway redeploy --service blog --yes"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
 
         # Generate a Railway domain.
         msg = "  Generating a Railway domain..."
-        cmd = "railway domain --port 8080 --json"
+        cmd = "railway domain --port 8080 --service blog --json"
         output = plugin_utils.run_quick_command(cmd)
-        breakpoint()
 
-        # Should set self.deployed_url, which will be reported in the success message.
-        pass
+        output_json = json.loads(output.stdout.decode())
+        self.deployed_url = output_json["domain"]
+
+        webbrowser.open(self.deployed_url)
 
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.
@@ -186,6 +189,6 @@ class PlatformDeployer:
             '--set "PGPORT=${{Postgres.PGPORT}}"',
         ]
 
-        cmd = f"railway variables {' '.join(env_vars)}"
+        cmd = f"railway variables {' '.join(env_vars)} --service blog"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
