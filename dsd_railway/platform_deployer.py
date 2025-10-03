@@ -1,15 +1,6 @@
 """Manages all Railway-specific aspects of the deployment process.
 
 Notes:
-- 
-
-Add a new file to the user's project, without using a template:
-
-    def _add_dockerignore(self):
-        # Add a dockerignore file, based on user's local project environmnet.
-        path = dsd_config.project_root / ".dockerignore"
-        dockerignore_str = self._build_dockerignore()
-        plugin_utils.add_file(path, dockerignore_str)
 
 Add a new file to the user's project, using a template:
 
@@ -20,30 +11,12 @@ Add a new file to the user's project, using a template:
             "django_project_name": dsd_config.local_project_name,
         }
         contents = plugin_utils.get_template_string(template_path, context)
-
-        # Write file to project.
-        path = dsd_config.project_root / "Dockerfile"
-        plugin_utils.add_file(path, contents)
-
-Modify user's settings file:
-
-    def _modify_settings(self):
-        # Add platformsh-specific settings.
-        template_path = self.templates_path / "settings.py"
-        context = {
-            "deployed_project_name": self._get_deployed_project_name(),
-        }
-        plugin_utils.modify_settings_file(template_path, context)
-
-Add a set of requirements:
-
-    def _add_requirements(self):
-        # Add requirements for deploying to Fly.io.
-        requirements = ["gunicorn", "psycopg2-binary", "dj-database-url", "whitenoise"]
-        plugin_utils.add_packages(requirements)
 """
 
 import sys, os, re, json
+import subprocess
+import time
+import webbrowser
 from pathlib import Path
 
 from django.utils.safestring import mark_safe
@@ -55,7 +28,9 @@ from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
-from django_simple_deploy.management.commands.utils.command_errors import DSDCommandError
+from django_simple_deploy.management.commands.utils.command_errors import (
+    DSDCommandError,
+)
 
 
 class PlatformDeployer:
@@ -78,6 +53,9 @@ class PlatformDeployer:
         self._prep_automate_all()
 
         # Configure project for deployment to Railway
+        self._modify_settings()
+        self._make_static_dir()
+        self._add_requirements()
 
         self._conclude_automate_all()
         self._show_success_message()
@@ -94,11 +72,43 @@ class PlatformDeployer:
         """
         pass
 
-
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
         pass
 
+
+
+    def _modify_settings(self):
+        """Add Railway-specific settings."""
+        msg = "\nAdding a Railway-specific settings block."
+        plugin_utils.write_output(msg)
+
+        template_path = self.templates_path / "settings.py"
+        plugin_utils.modify_settings_file(template_path)
+
+    def _make_static_dir(self):
+        """Add a static/ dir if needed."""
+        msg = "\nAdding a static/ directory and a placeholder text file."
+        plugin_utils.write_output(msg)
+
+        path_static = Path("static")
+        plugin_utils.add_dir(path_static)
+
+        # Write a placeholder file, to be picked up by Git.
+        path_placeholder = path_static / "placeholder.txt"
+        contents = "Placeholder file, to be picked up by Git.\n"
+        plugin_utils.add_file(path_placeholder, contents)
+
+    def _add_requirements(self):
+        """Add requirements for deploying to Railway."""
+        requirements = [
+            "gunicorn",
+            "whitenoise",
+            "psycopg",
+            "psycopg-binary",
+            "psycopg-pool",
+        ]
+        plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
         """Finish automating the push to Railway.
@@ -112,11 +122,57 @@ class PlatformDeployer:
 
         plugin_utils.commit_changes()
 
-        # Push project.
-        plugin_utils.write_output("  Deploying to Railway...")
+        # Initialize empty project on Railway.
+        plugin_utils.write_output("  Initializing empty project on Railway...")
+        cmd = "railway init"
+        plugin_utils.run_slow_command(cmd)
 
-        # Should set self.deployed_url, which will be reported in the success message.
-        pass
+        # Deploy the project.
+        msg = "  Pushing code to Railway."
+        msg += "\n  You'll see a database error, which will be addressed in the next step."
+        plugin_utils.write_output(msg)
+        
+        cmd = "railway up"
+        try:
+            plugin_utils.run_slow_command(cmd)
+        except subprocess.CalledProcessError:
+            msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
+            plugin_utils.write_output(msg)
+
+        # Add a database.
+        msg = "  Adding a database..."
+        plugin_utils.write_output(msg)
+
+        cmd = "railway add --database postgres"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        # Set env vars.
+        self._set_env_vars()
+
+        # Redeploy.
+        cmd = "railway redeploy --service blog --yes"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        # Generate a Railway domain.
+        msg = "  Generating a Railway domain..."
+        cmd = "railway domain --port 8080 --service blog --json"
+        output = plugin_utils.run_quick_command(cmd)
+
+        output_json = json.loads(output.stdout.decode())
+        self.deployed_url = output_json["domain"]
+
+        # Wait {pause} before opening.
+        pause = 20
+        msg = f"  Waiting {pause}s for deployment to finish..."
+        plugin_utils.write_output(msg)
+
+        webbrowser.open(self.deployed_url)
+
+        msg = f"  If you get an error page, refresh the browser in a minute or two."
+        plugin_utils.write_output(msg)
+
 
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.
@@ -128,3 +184,21 @@ class PlatformDeployer:
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
+
+    
+    def _set_env_vars(self):
+        """Set required environment variables for Railway."""
+        msg = "  Setting environment variables on Railway..."
+        plugin_utils.write_output(msg)
+
+        env_vars = [
+            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+            '--set "PGUSER=${{Postgres.PGUSER}}"',
+            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+            '--set "PGHOST=${{Postgres.PGHOST}}"',
+            '--set "PGPORT=${{Postgres.PGPORT}}"',
+        ]
+
+        cmd = f"railway variables {' '.join(env_vars)} --service blog"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
