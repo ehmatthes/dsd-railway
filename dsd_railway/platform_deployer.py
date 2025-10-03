@@ -112,19 +112,16 @@ class PlatformDeployer:
 
     def _make_static_dir(self):
         """Add a static/ dir if needed."""
-        path_static = Path("static")
-        if path_static.exists():
-            return
-
         msg = "\nAdding a static/ directory and a placeholder text file."
         plugin_utils.write_output(msg)
 
-        path_static.mkdir()
-        
+        path_static = Path("static")
+        plugin_utils.add_dir(path_static)
+
         # Write a placeholder file, to be picked up by Git.
         path_placeholder = path_static / "placeholder.txt"
-        msg = "Placeholder file, to be picked up by Git.\n"
-        path_placeholder.write_text(msg)
+        contents = "Placeholder file, to be picked up by Git.\n"
+        plugin_utils.add_file(path_placeholder, contents)
 
 
     def _conclude_automate_all(self):
