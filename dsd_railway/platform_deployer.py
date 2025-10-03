@@ -103,7 +103,10 @@ class PlatformDeployer:
 
 
     def _modify_settings(self):
-        # Add Railway-specific settings.
+        """Add Railway-specific settings."""
+        msg = "\nAdding a Railway-specific settings block."
+        plugin_utils.write_output(msg)
+
         template_path = self.templates_path / "settings.py"
         plugin_utils.modify_settings_file(template_path)
 
@@ -112,6 +115,9 @@ class PlatformDeployer:
         path_static = Path("static")
         if path_static.exists():
             return
+
+        msg = "\nAdding a static/ directory and a placeholder text file."
+        plugin_utils.write_output(msg)
 
         path_static.mkdir()
         
