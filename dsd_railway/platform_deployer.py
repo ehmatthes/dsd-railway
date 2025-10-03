@@ -130,7 +130,11 @@ class PlatformDeployer:
         plugin_utils.write_output(msg)
         
         cmd = "railway up"
-        plugin_utils.run_slow_command(cmd)
+        try:
+            plugin_utils.run_slow_command(cmd)
+        except subprocess.CalledProcessError:
+            msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
+            plugin_utils.write_output(msg)
 
         # Add a database.
         msg = "  Adding a database..."
