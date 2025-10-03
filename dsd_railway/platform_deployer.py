@@ -73,6 +73,8 @@ class PlatformDeployer:
         """Take any further actions needed if using automate_all."""
         pass
 
+
+
     def _modify_settings(self):
         """Add Railway-specific settings."""
         msg = "\nAdding a Railway-specific settings block."
@@ -117,8 +119,40 @@ class PlatformDeployer:
 
         plugin_utils.commit_changes()
 
-        # Push project.
-        plugin_utils.write_output("  Deploying to Railway...")
+        # Initialize empty project on Railway.
+        plugin_utils.write_output("  Initializing empty project on Railway...")
+        cmd = "railway init"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        # Deploy the project.
+        msg = "  Pushing code to Railway."
+        msg += "\n  You'll see a database error, which will be addressed in the next step."
+        plugin_utils.write_output(msg)
+        
+        cmd = "railway up"
+        plugin_utils.run_slow_command(cmd)
+
+        # Add a database.
+        msg = "  Adding a database..."
+        plugin_utils.write_output(msg)
+
+        cmd = "railway add"
+        output = run_quick_command(cmd)
+        plugin_utils.write_output(output, write_to_console=False)
+
+        # Set env vars.
+        self._set_env_vars()
+
+        # Redeploy.
+        cmd = "railway redeploy"
+        plugin_utils.run_slow_command(cmd)
+
+        # Generate a Railway domain.
+        msg = "  Generating a Railway domain..."
+        cmd = "railway domain --port 8080 --json"
+        output = plugin_utils.run_quick_command(cmd)
+        breakpoint()
 
         # Should set self.deployed_url, which will be reported in the success message.
         pass
@@ -133,3 +167,21 @@ class PlatformDeployer:
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
+
+    
+    def _set_env_vars(self):
+        """Set required environment variables for Railway."""
+        msg = "  Setting environment variables on Railway..."
+        plugin_utils.write_output(msg)
+
+        env_vars = [
+            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+            '--set "PGUSER=${{Postgres.PGUSER}}"',
+            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+            '--set "PGHOST=${{Postgres.PGHOST}}"',
+            '--set "PGPORT=${{Postgres.PGPORT}}"',
+        ]
+
+        cmd = f"railway variables {' '.join(env_vars)}"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
