@@ -122,8 +122,7 @@ class PlatformDeployer:
         # Initialize empty project on Railway.
         plugin_utils.write_output("  Initializing empty project on Railway...")
         cmd = "railway init"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
+        plugin_utils.run_slow_command(cmd)
 
         # Deploy the project.
         msg = "  Pushing code to Railway."
