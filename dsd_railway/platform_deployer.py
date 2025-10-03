@@ -1,15 +1,6 @@
 """Manages all Railway-specific aspects of the deployment process.
 
 Notes:
-- 
-
-Add a new file to the user's project, without using a template:
-
-    def _add_dockerignore(self):
-        # Add a dockerignore file, based on user's local project environmnet.
-        path = dsd_config.project_root / ".dockerignore"
-        dockerignore_str = self._build_dockerignore()
-        plugin_utils.add_file(path, dockerignore_str)
 
 Add a new file to the user's project, using a template:
 
@@ -20,27 +11,6 @@ Add a new file to the user's project, using a template:
             "django_project_name": dsd_config.local_project_name,
         }
         contents = plugin_utils.get_template_string(template_path, context)
-
-        # Write file to project.
-        path = dsd_config.project_root / "Dockerfile"
-        plugin_utils.add_file(path, contents)
-
-Modify user's settings file:
-
-    def _modify_settings(self):
-        # Add platformsh-specific settings.
-        template_path = self.templates_path / "settings.py"
-        context = {
-            "deployed_project_name": self._get_deployed_project_name(),
-        }
-        plugin_utils.modify_settings_file(template_path, context)
-
-Add a set of requirements:
-
-    def _add_requirements(self):
-        # Add requirements for deploying to Fly.io.
-        requirements = ["gunicorn", "psycopg2-binary", "dj-database-url", "whitenoise"]
-        plugin_utils.add_packages(requirements)
 """
 
 import sys, os, re, json
@@ -55,7 +25,9 @@ from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
-from django_simple_deploy.management.commands.utils.command_errors import DSDCommandError
+from django_simple_deploy.management.commands.utils.command_errors import (
+    DSDCommandError,
+)
 
 
 class PlatformDeployer:
@@ -80,6 +52,7 @@ class PlatformDeployer:
         # Configure project for deployment to Railway
         self._modify_settings()
         self._make_static_dir()
+        self._add_requirements()
 
         self._conclude_automate_all()
         self._show_success_message()
@@ -96,11 +69,9 @@ class PlatformDeployer:
         """
         pass
 
-
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
         pass
-
 
     def _modify_settings(self):
         """Add Railway-specific settings."""
@@ -123,6 +94,16 @@ class PlatformDeployer:
         contents = "Placeholder file, to be picked up by Git.\n"
         plugin_utils.add_file(path_placeholder, contents)
 
+    def _add_requirements(self):
+        """Add requirements for deploying to Railway."""
+        requirements = [
+            "gunicorn",
+            "whitenoise",
+            "psycopg",
+            "psycopg-binary",
+            "psycopg-pool",
+        ]
+        plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
         """Finish automating the push to Railway.
