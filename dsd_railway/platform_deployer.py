@@ -79,6 +79,7 @@ class PlatformDeployer:
 
         # Configure project for deployment to Railway
         self._modify_settings()
+        self._make_static_dir()
 
         self._conclude_automate_all()
         self._show_success_message()
@@ -105,6 +106,19 @@ class PlatformDeployer:
         # Add Railway-specific settings.
         template_path = self.templates_path / "settings.py"
         plugin_utils.modify_settings_file(template_path)
+
+    def _make_static_dir(self):
+        """Add a static/ dir if needed."""
+        path_static = Path("static")
+        if path_static.exists():
+            return
+
+        path_static.mkdir()
+        
+        # Write a placeholder file, to be picked up by Git.
+        path_placeholder = path_static / "placeholder.txt"
+        msg = "Placeholder file, to be picked up by Git.\n"
+        path_placeholder.write_text(msg)
 
 
     def _conclude_automate_all(self):
