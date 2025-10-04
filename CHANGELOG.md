@@ -8,8 +8,8 @@ Changelog: dsd-<platformname>
 
 #### External changes
 
-- 
+- Supports deployment of the sample blog project using `--automate-all`. Some values are hard-coded.
 
 #### Internal changes
 
-- 
+- N/A
