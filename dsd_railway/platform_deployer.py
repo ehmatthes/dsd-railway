@@ -70,7 +70,9 @@ class PlatformDeployer:
         Raises:
             DSDCommandError: If we find any reason deployment won't work.
         """
-        pass
+        # Use local project name for deployed project, if no custom name passed.
+        if not dsd_config.deployed_project_name:
+            dsd_config.deployed_project_name = dsd_config.local_project_name
 
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
@@ -151,13 +153,13 @@ class PlatformDeployer:
         self._set_env_vars()
 
         # Redeploy.
-        cmd = "railway redeploy --service blog --yes"
+        cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
 
         # Generate a Railway domain.
         msg = "  Generating a Railway domain..."
-        cmd = "railway domain --port 8080 --service blog --json"
+        cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
         output = plugin_utils.run_quick_command(cmd)
 
         output_json = json.loads(output.stdout.decode())
@@ -199,6 +201,6 @@ class PlatformDeployer:
             '--set "PGPORT=${{Postgres.PGPORT}}"',
         ]
 
-        cmd = f"railway variables {' '.join(env_vars)} --service blog"
+        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name}"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
