@@ -6,6 +6,8 @@ from textwrap import dedent
 
 from django.conf import settings
 
+from .plugin_config import plugin_config
+
 
 confirm_automate_all = """
 The --automate-all flag means django-simple-deploy will:
@@ -88,6 +90,7 @@ def success_msg_automate_all(deployed_url):
           refresh the tab. It sometimes takes a few minutes for the
           server to be ready.
         - You can also visit your project at {deployed_url}
+        - Project ID: {plugin_config.project_id}
 
         If you make further changes and want to push them to Railway,
         commit your changes and then run `...`.

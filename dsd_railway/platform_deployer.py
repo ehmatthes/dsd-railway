@@ -159,11 +159,21 @@ class PlatformDeployer:
 
         # Generate a Railway domain.
         msg = "  Generating a Railway domain..."
+        plugin_utils.write_output(msg)
         cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
         output = plugin_utils.run_quick_command(cmd)
 
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
+
+        # Get project ID.
+        msg = "  Getting project ID..."
+        plugin_utils.write_output(msg)
+        cmd = "railway status --json"
+        output = plugin_utils.run_quick_command(cmd)
+
+        output_json = json.loads(output.stdout.decode())
+        plugin_config.project_id = output_json["id"]
 
         # Wait {pause} before opening.
         pause = 20
