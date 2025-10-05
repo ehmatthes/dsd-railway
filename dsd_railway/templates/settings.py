@@ -5,7 +5,7 @@ import os
 
 if os.environ.get("RAILWAY_PROJECT_NAME", ""):
     DEBUG = False
-    
+
     # Configure a Postgres db.
     DATABASES = {
         'default': {
@@ -17,11 +17,6 @@ if os.environ.get("RAILWAY_PROJECT_NAME", ""):
             'PORT': os.environ.get("PGPORT", ""),
         }
     }
-
-    # Helpful for development work.
-    print("\n\n***** ----- *****\n")
-    print(DATABASES)
-    print("\n***** ----- *****\n\n")
 
     # Static files config.
     STATIC_URL = 'static/'

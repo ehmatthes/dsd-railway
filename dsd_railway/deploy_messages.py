@@ -75,7 +75,7 @@ def success_msg(log_output=""):
     return msg
 
 
-def success_msg_automate_all(deployed_url):
+def success_msg_automate_all(deployed_url, project_id):
     """Success message, when using --automate-all."""
 
     msg = dedent(
@@ -88,6 +88,7 @@ def success_msg_automate_all(deployed_url):
           refresh the tab. It sometimes takes a few minutes for the
           server to be ready.
         - You can also visit your project at {deployed_url}
+        - Project ID: {project_id}
 
         If you make further changes and want to push them to Railway,
         commit your changes and then run `...`.

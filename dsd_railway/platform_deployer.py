@@ -70,7 +70,9 @@ class PlatformDeployer:
         Raises:
             DSDCommandError: If we find any reason deployment won't work.
         """
-        pass
+        # Use local project name for deployed project, if no custom name passed.
+        if not dsd_config.deployed_project_name:
+            dsd_config.deployed_project_name = dsd_config.local_project_name
 
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
@@ -124,7 +126,7 @@ class PlatformDeployer:
 
         # Initialize empty project on Railway.
         plugin_utils.write_output("  Initializing empty project on Railway...")
-        cmd = "railway init"
+        cmd = f"railway init --name {dsd_config.deployed_project_name}"
         plugin_utils.run_slow_command(cmd)
 
         # Deploy the project.
@@ -151,22 +153,44 @@ class PlatformDeployer:
         self._set_env_vars()
 
         # Redeploy.
-        cmd = "railway redeploy --service blog --yes"
+        cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
 
         # Generate a Railway domain.
         msg = "  Generating a Railway domain..."
-        cmd = "railway domain --port 8080 --service blog --json"
+        plugin_utils.write_output(msg)
+        cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
         output = plugin_utils.run_quick_command(cmd)
 
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
 
+        # Get project ID.
+        msg = "  Getting project ID..."
+        plugin_utils.write_output(msg)
+        cmd = "railway status --json"
+        output = plugin_utils.run_quick_command(cmd)
+
+        output_json = json.loads(output.stdout.decode())
+        plugin_config.project_id = output_json["id"]
+
         # Wait {pause} before opening.
         pause = 20
         msg = f"  Waiting {pause}s for deployment to finish..."
         plugin_utils.write_output(msg)
+
+        # Wait for a 200 response.
+        pause = 10
+        timeout = 300
+        for _ in range(int(timeout/pause)):
+            msg = "  Checking if deployment is ready..."
+            plugin_utils.write_output(msg)
+            r = requests.get(self.deployed_url)
+            if r.status_code == 200:
+                break
+
+            time.sleep(pause)
 
         webbrowser.open(self.deployed_url)
 
@@ -180,7 +204,7 @@ class PlatformDeployer:
         Describe ongoing approach of commit, push, migrate.
         """
         if dsd_config.automate_all:
-            msg = platform_msgs.success_msg_automate_all(self.deployed_url)
+            msg = platform_msgs.success_msg_automate_all(self.deployed_url, plugin_config.project_id)
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
@@ -199,6 +223,6 @@ class PlatformDeployer:
             '--set "PGPORT=${{Postgres.PGPORT}}"',
         ]
 
-        cmd = f"railway variables {' '.join(env_vars)} --service blog"
+        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name}"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
