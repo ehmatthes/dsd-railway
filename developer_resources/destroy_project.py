@@ -1,6 +1,10 @@
 """Destroy a project on Railway.
 
 RAILWAY_API_TOKEN should be an account token, not a workspace token.
+
+Usage:
+  $ export RAILWAY_API_TOKEN=<account-token>
+  $ python developer_resources/destroy_project.py <project-id>
 """
 
 import sys
