@@ -204,7 +204,7 @@ class PlatformDeployer:
         Describe ongoing approach of commit, push, migrate.
         """
         if dsd_config.automate_all:
-            msg = platform_msgs.success_msg_automate_all(self.deployed_url)
+            msg = platform_msgs.success_msg_automate_all(self.deployed_url, plugin_config.project_id)
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
