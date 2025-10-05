@@ -1,4 +1,7 @@
-"""Destroy a project on Railway."""
+"""Destroy a project on Railway.
+
+RAILWAY_API_TOKEN should be an account token, not a workspace token.
+"""
 
 import sys
 import os
