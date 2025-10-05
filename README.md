@@ -20,3 +20,15 @@ Fully automated deployment
 - Run `python manage.py deploy --automate-all`.
 
 Your deployed project should appear in a new browser tab.
+
+Destroying a project
+---
+
+This is mostly for developers, but if you're trying this out and want to destroy a project the following should work:
+
+```sh
+$ export RAILWAY_API_TOKEN=<account-token>
+$ python developer_resources/destroy_project.py <project-id>
+```
+
+Be careful running this command, as it is a destructive action.
