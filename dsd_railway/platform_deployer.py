@@ -180,6 +180,18 @@ class PlatformDeployer:
         msg = f"  Waiting {pause}s for deployment to finish..."
         plugin_utils.write_output(msg)
 
+        # Wait for a 200 response.
+        pause = 10
+        timeout = 300
+        for _ in range(int(timeout/pause)):
+            msg = "  Checking if deployment is ready..."
+            plugin_utils.write_output(msg)
+            r = requests.get(self.deployed_url)
+            if r.status_code == 200:
+                break
+
+            time.sleep(pause)
+
         webbrowser.open(self.deployed_url)
 
         msg = f"  If you get an error page, refresh the browser in a minute or two."
