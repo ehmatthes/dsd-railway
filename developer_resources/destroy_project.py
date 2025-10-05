@@ -34,10 +34,6 @@ headers = {
     "Content-Type": "application/json",
 }
 
-# payload = {
-#     "query": "query { me { name email } }"
-# }
-
 payload = {
     "query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'
 }
