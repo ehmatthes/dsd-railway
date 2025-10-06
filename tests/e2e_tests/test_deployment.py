@@ -78,6 +78,19 @@ def test_deployment(tmp_project, cli_options, request):
 
         output_json = json.loads(output.stdout.decode())
         project_url = output_json["domain"]
+
+        # Wait for a 200 response.
+        pause = 10
+        timeout = 300
+        for _ in range(int(timeout/pause)):
+            msg = "  Checking if deployment is ready..."
+            print(msg)
+            r = requests.get(project_url)
+            if r.status_code == 200:
+                break
+
+            time.sleep(pause)
+
         webbrowser.open(project_url)
 
     # Get project ID.
