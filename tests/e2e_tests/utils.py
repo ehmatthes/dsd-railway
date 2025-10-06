@@ -6,7 +6,7 @@ Some Fly.io functions are included as an example.
 import re, time
 import json
 import os
-import pprint
+from pprint import pprint
 
 import requests
 
@@ -84,7 +84,7 @@ def check_log(tmp_proj_dir):
     if not path.exists():
         return False
 
-    log_files = list(path.glob("simple_deploy_*.log"))
+    log_files = list(path.glob("dsd_*.log"))
     if not log_files:
         return False
 
