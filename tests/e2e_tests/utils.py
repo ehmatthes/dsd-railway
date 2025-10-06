@@ -6,6 +6,8 @@ Some Fly.io functions are included as an example.
 import re, time
 import json
 
+import requests
+
 from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 
@@ -91,17 +93,31 @@ def check_log(tmp_proj_dir):
     return True
 
 
-# def destroy_project(request):
-#     """Destroy the deployed project, and all remote resources."""
-#     print("\nCleaning up:")
+def destroy_project(request):
+    """Destroy the deployed project, and all remote resources."""
+    print("\nCleaning up:")
 
-#     app_name = request.config.cache.get("app_name", None)
-#     if not app_name:
-#         print("  No app name found; can't destroy any remote resources.")
-#         return None
+    project_id = request.config.cache.get("project_id", None)
+    if not project_id:
+        print("  No project id found; can't destroy any remote resources.")
+        return None
 
-#     print("  Destroying Fly.io project...")
-#     make_sp_call(f"fly apps destroy -y {app_name}")
+    print("  Destroying Railway project...")
+    railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
+    if not railway_token:
+        print("Please set the RAILWAY_API_TOKEN environment variable.")
+        return
 
-#     print("  Destroying Fly.io database...")
-#     make_sp_call(f"fly apps destroy -y {app_name}-db")
+    base_url = "https://backboard.railway.com/graphql/v2"
+    headers = {
+        "Authorization": f"Bearer {railway_token}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'
+    }
+
+    r = requests.post(base_url, headers=headers, json=payload, timeout=30)
+    data = r.json()
+    pprint(data)
