@@ -54,6 +54,7 @@ class PlatformDeployer:
 
         # Configure project for deployment to Railway
         self._modify_settings()
+        self._add_railway_toml()
         self._make_static_dir()
         self._add_requirements()
 
@@ -91,6 +92,21 @@ class PlatformDeployer:
             template_path = self.templates_path / "settings.py"
 
         plugin_utils.modify_settings_file(template_path)
+
+    def _add_railway_toml(self):
+        """Add a railway.toml file."""
+        msg = "\nAdding a railway.toml file..."
+        plugin_utils.write_output(msg)
+
+        template_path = self.templates_path / "railway.toml"
+        context = {
+            "local_project_name": dsd_config.local_project_name,
+        }
+        contents = plugin_utils.get_template_string(template_path, context)
+
+        # Write file to project.
+        path = dsd_config.project_root / "railway.toml"
+        plugin_utils.add_file(path, contents)
 
     def _make_static_dir(self):
         """Add a static/ dir if needed."""

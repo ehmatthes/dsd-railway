@@ -1,0 +1,2 @@
+[deploy]
+startCommand = "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn {{ local_project_name }}.wsgi:application"
