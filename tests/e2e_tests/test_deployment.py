@@ -111,7 +111,7 @@ def test_deployment(tmp_project, cli_options, request):
         cmd = f"railway variables --service {app_name} --json"
         output = make_sp_call(cmd, capture_output=True).stdout.decode()
         output_json = json.loads(output)
-        project_url = f"https://{output_json["RAILWAY_PUBLIC_DOMAIN"]}
+        project_url = f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
     
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")
