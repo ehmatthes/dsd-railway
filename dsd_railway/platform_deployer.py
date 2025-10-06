@@ -231,7 +231,6 @@ class PlatformDeployer:
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
 
-        breakpoint()
         # Wagtail projects need an env var pointing to the settings module.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             plugin_utils.write_output("  Setting DJANGO_SETTINGS_MODULE environment variable...")
