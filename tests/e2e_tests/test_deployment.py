@@ -101,22 +101,28 @@ def test_deployment(tmp_project, cli_options, request):
     project_id = output_json["id"]
     request.config.cache.set("project_id", project_id)
     
-    # Note: ***** Remove this line, or your test will always report as passed! *****
-    remote_functionality_passed = True
+    # Get URL from an automated deployment.
+    if cli_options.automate_all:
+        # cmd = f"railway domain --service {app_name}"
+        # output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        # project_url = "https://" + output.split("https://")[-1].strip()
 
+        breakpoint()
+        cmd = f"railway variables --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_url = f"https://{output_json["RAILWAY_PUBLIC_DOMAIN"]}
+    
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")
     time.sleep(10)
 
-    # Note: Uncomment this section once your deployment is successful, and 
-    #   project_url is set in the above section.
-    # 
     # Test functionality of both deployed app, and local project.
     #   We want to make sure the deployment works, but also make sure we haven't
     #   affected functionality of the local project using the development server.
-    # remote_functionality_passed = it_utils.check_deployed_app_functionality(
-    #     python_cmd, project_url
-    # )
+    remote_functionality_passed = it_utils.check_deployed_app_functionality(
+        python_cmd, project_url
+    )
     local_functionality_passed = it_utils.check_local_app_functionality(python_cmd)
     log_check_passed = platform_utils.check_log(tmp_project)
 
