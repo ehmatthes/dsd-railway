@@ -63,7 +63,7 @@ def test_deployment(tmp_project, cli_options, request):
         request.config.cache.set("project_id", project_id)
 
         # Link project.
-        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+        cmd = f"railway link --project {project_id} --service {app_name}"
         make_sp_call(cmd)
 
         cmd = "railway up"
