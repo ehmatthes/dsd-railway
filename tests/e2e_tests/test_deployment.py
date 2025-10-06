@@ -3,6 +3,7 @@ import json
 import webbrowser
 
 import pytest
+import requests
 
 from tests.e2e_tests.utils import it_helper_functions as it_utils
 from . import utils as platform_utils
