@@ -158,10 +158,16 @@ class PlatformDeployer:
         output_json = json.loads(output.stdout.decode())
         plugin_config.project_id = output_json["id"]
 
+        msg = f"  Project ID: {plugin_config.project_id}"
+        plugin_utils.write_output(msg)
+
         # Link project.
         msg = "  Linking project..."
         plugin_utils.write_output(msg)
         cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
 
         # Deploy the project.
         msg = "  Pushing code to Railway."
