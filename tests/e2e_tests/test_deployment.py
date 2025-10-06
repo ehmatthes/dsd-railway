@@ -103,11 +103,6 @@ def test_deployment(tmp_project, cli_options, request):
     
     # Get URL from an automated deployment.
     if cli_options.automate_all:
-        # cmd = f"railway domain --service {app_name}"
-        # output = make_sp_call(cmd, capture_output=True).stdout.decode()
-        # project_url = "https://" + output.split("https://")[-1].strip()
-
-        breakpoint()
         cmd = f"railway variables --service {app_name} --json"
         output = make_sp_call(cmd, capture_output=True).stdout.decode()
         output_json = json.loads(output)
