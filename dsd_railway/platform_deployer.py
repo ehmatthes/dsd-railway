@@ -97,7 +97,7 @@ class PlatformDeployer:
         msg = "\nAdding a static/ directory and a placeholder text file."
         plugin_utils.write_output(msg)
 
-        path_static = Path("static")
+        path_static = Path("staticfiles")
         plugin_utils.add_dir(path_static)
 
         # Write a placeholder file, to be picked up by Git.
