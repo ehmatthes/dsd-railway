@@ -85,7 +85,11 @@ class PlatformDeployer:
         msg = "\nAdding a Railway-specific settings block."
         plugin_utils.write_output(msg)
 
-        template_path = self.templates_path / "settings.py"
+        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
+            template_path = self.templates_path / "settings_wagtail.py"
+        else:
+            template_path = self.templates_path / "settings.py"
+
         plugin_utils.modify_settings_file(template_path)
 
     def _make_static_dir(self):
@@ -226,3 +230,15 @@ class PlatformDeployer:
         cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name}"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
+
+        breakpoint()
+        # Wagtail projects need an env var pointing to the settings module.
+        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
+            plugin_utils.write_output("  Setting DJANGO_SETTINGS_MODULE environment variable...")
+
+            # Need form mysite.settings.production
+            dotted_settings_path = ".".join(dsd_config.settings_path.parts[-3:]).removesuffix(".py")
+
+            cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
+            output = plugin_utils.run_quick_command(cmd)
+            plugin_utils.write_output(output)
