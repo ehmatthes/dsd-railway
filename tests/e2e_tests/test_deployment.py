@@ -55,6 +55,17 @@ def test_deployment(tmp_project, cli_options, request):
         cmd = f"railway init --name {app_name}"
         make_sp_call(cmd)
 
+        # Get project ID.
+        cmd = "railway status --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_id = output_json["id"]
+        request.config.cache.set("project_id", project_id)
+
+        # Link project.
+        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+        make_sp_call(cmd)
+
         cmd = "railway up"
         make_sp_call(cmd)
 
@@ -93,16 +104,17 @@ def test_deployment(tmp_project, cli_options, request):
             time.sleep(pause)
 
         webbrowser.open(project_url)
-
-    # Get project ID.
-    cmd = "railway status --json"
-    output = make_sp_call(cmd, capture_output=True).stdout.decode()
-    output_json = json.loads(output)
-    project_id = output_json["id"]
-    request.config.cache.set("project_id", project_id)
     
-    # Get URL from an automated deployment.
+    # Get URL and project ID from an automated deployment.
     if cli_options.automate_all:
+        # Get project ID.
+        cmd = "railway status --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_id = output_json["id"]
+        request.config.cache.set("project_id", project_id)
+
+        # Get URL
         cmd = f"railway variables --service {app_name} --json"
         output = make_sp_call(cmd, capture_output=True).stdout.decode()
         output_json = json.loads(output)
