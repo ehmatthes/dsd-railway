@@ -70,7 +70,7 @@ def test_deployment(tmp_project, cli_options, request):
         cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
         make_sp_call(cmd)
 
-        cmd = f"railway redeploy --service {app_name}"
+        cmd = f"railway redeploy --service {app_name} --yes"
         make_sp_call(cmd)
 
         cmd = f"railway domain --port 8080 --service {app_name} --json"
