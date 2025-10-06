@@ -149,6 +149,20 @@ class PlatformDeployer:
         cmd = f"railway init --name {dsd_config.deployed_project_name}"
         plugin_utils.run_slow_command(cmd)
 
+        # Get project ID.
+        msg = "  Getting project ID..."
+        plugin_utils.write_output(msg)
+        cmd = "railway status --json"
+        output = plugin_utils.run_quick_command(cmd)
+
+        output_json = json.loads(output.stdout.decode())
+        plugin_config.project_id = output_json["id"]
+
+        # Link project.
+        msg = "  Linking project..."
+        plugin_utils.write_output(msg)
+        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+
         # Deploy the project.
         msg = "  Pushing code to Railway."
         msg += "\n  You'll see a database error, which will be addressed in the next step."
@@ -186,14 +200,14 @@ class PlatformDeployer:
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
 
-        # Get project ID.
-        msg = "  Getting project ID..."
-        plugin_utils.write_output(msg)
-        cmd = "railway status --json"
-        output = plugin_utils.run_quick_command(cmd)
-
-        output_json = json.loads(output.stdout.decode())
-        plugin_config.project_id = output_json["id"]
+        # # Get project ID.
+        # msg = "  Getting project ID..."
+        # plugin_utils.write_output(msg)
+        # cmd = "railway status --json"
+        # output = plugin_utils.run_quick_command(cmd)
+        # 
+        # output_json = json.loads(output.stdout.decode())
+        # plugin_config.project_id = output_json["id"]
 
         # Wait {pause} before opening.
         pause = 20
