@@ -99,9 +99,33 @@ def destroy_project(request):
     """Destroy the deployed project, and all remote resources."""
     print("\nCleaning up:")
 
+    # Get cached proejct ID and app_name.
+    # DEV: These blocks can be cleaned up with the walrus operator.
     project_id = request.config.cache.get("project_id", None)
     if not project_id:
         print("  No project id found; can't destroy any remote resources.")
+        return None
+    
+    app_name = request.config.cache.get("app_name", None)
+    if not app_name:
+        print("  No app_name available; can't destroy any remote resources.")
+        return None
+    
+    # Get project ID from env vars, and make sure it matches cached value.
+    print("  Checking that project IDs match...")
+    cmd = f"railway variables --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True)
+    output_json = json.loads(output.stdout.decode())
+    project_id_env_var = output_json["RAILWAY_PROJECT_ID"]
+    
+    if project_id_env_var == project_id:
+        print("    Project IDs match.")
+    else:
+        msg = f"  Cached project ID:       {project_id}"
+        msg += f"\n  Project ID from env var: {project_id_env_var}"
+        msg += "  Project IDs don't match. Not destroying any remote resources."
+        print(msg)
+        
         return None
 
     print("  Destroying Railway project...")
