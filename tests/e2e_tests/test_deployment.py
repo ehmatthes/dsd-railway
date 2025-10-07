@@ -82,6 +82,22 @@ def test_deployment(tmp_project, cli_options, request):
         cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
         make_sp_call(cmd)
 
+        # Make sure env vars are reading from Postgres values.
+        pause = 10
+        timeout = 60
+        for _ in range(int(timeout/pause)):
+            msg = "  Reading env vars..."
+            print(msg)
+            cmd = f"railway variables --service {app_name} --json"
+            output = make_sp_call(cmd, capture_output=True)
+            output_json = json.loads(output.stdout.decode())
+            if output_json["PGUSER"] == "postgres":
+                break
+            
+            print(output_json)
+            time.sleep(pause)
+
+
         cmd = f"railway redeploy --service {app_name} --yes"
         make_sp_call(cmd)
 
