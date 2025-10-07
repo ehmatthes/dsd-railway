@@ -1,9 +1,14 @@
 import re, time
+import json
+import webbrowser
 
 import pytest
+import requests
 
 from tests.e2e_tests.utils import it_helper_functions as it_utils
 from . import utils as platform_utils
+
+from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 from tests.e2e_tests.conftest import tmp_project, cli_options
 
@@ -33,12 +38,6 @@ def test_deployment(tmp_project, cli_options, request):
 
     python_cmd = it_utils.get_python_exe(tmp_project)
 
-    # Note: If not using automate_all, take steps here that the end user would take.
-    # Create a new project on the remote host, if not testing --automate-all.
-    # if not cli_options.automate_all:
-    #     app_name = platform_utils.create_project()
-    #     request.config.cache.set("app_name", app_name)
-
     # Run simple_deploy against the test project.
     it_utils.run_simple_deploy(python_cmd, automate_all=cli_options.automate_all)
 
@@ -46,37 +45,103 @@ def test_deployment(tmp_project, cli_options, request):
     if cli_options.pkg_manager == "pipenv":
         it_utils.make_sp_call(f"{python_cmd} -m pipenv lock")
 
-    # Note: This is an example of how you can stash information about the deployment, 
-    #   which can be used in the teardown phase. You do need to set project_url,
-    #   in order to run functionality tests against the deployed project.
-    # 
-    # Get the deployed project's URL, and ID so we can destroy it later.
-    #   This also commits configuration changes and pushes the project
-    #   when testing the configuration-only workflow.
-    # When testing automate_all, cache app_name for teardown work.
-    # if cli_options.automate_all:
-    #     project_url, app_name = platform_utils.get_project_url_name()
-    #     request.config.cache.set("app_name", app_name)
-    # else:
-    #     it_utils.commit_configuration_changes()
-    #     project_url = platform_utils.deploy_project(app_name)
-    
-    # Note: ***** Remove this line, or your test will always report as passed! *****
-    remote_functionality_passed = True
+    app_name = "blog"
+    request.config.cache.set("app_name", app_name)
 
+    # Note: If not using automate_all, take steps here that the end user would take.
+    if not cli_options.automate_all:
+        it_utils.commit_configuration_changes()
+
+        cmd = f"railway init --name {app_name}"
+        make_sp_call(cmd)
+
+        # Get project ID.
+        cmd = "railway status --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_id = output_json["id"]
+        request.config.cache.set("project_id", project_id)
+
+        # Link project.
+        cmd = f"railway link --project {project_id} --service {app_name}"
+        make_sp_call(cmd)
+
+        cmd = "railway up"
+        make_sp_call(cmd)
+
+        cmd = "railway add --database postgres"
+        make_sp_call(cmd)
+
+        env_vars = [
+            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+            '--set "PGUSER=${{Postgres.PGUSER}}"',
+            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+            '--set "PGHOST=${{Postgres.PGHOST}}"',
+            '--set "PGPORT=${{Postgres.PGPORT}}"',
+        ]
+        cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
+        make_sp_call(cmd)
+
+        # Make sure env vars are reading from Postgres values.
+        pause = 10
+        timeout = 60
+        for _ in range(int(timeout/pause)):
+            msg = "  Reading env vars..."
+            print(msg)
+            cmd = f"railway variables --service {app_name} --json"
+            output = make_sp_call(cmd, capture_output=True)
+            output_json = json.loads(output.stdout.decode())
+            if output_json["PGUSER"] == "postgres":
+                break
+            
+            print(output_json)
+            time.sleep(pause)
+
+        cmd = f"railway domain --port 8080 --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True)
+
+        output_json = json.loads(output.stdout.decode())
+        project_url = output_json["domain"]
+
+        # Wait for a 200 response.
+        pause = 10
+        timeout = 300
+        for _ in range(int(timeout/pause)):
+            msg = "  Checking if deployment is ready..."
+            print(msg)
+            r = requests.get(project_url)
+            if r.status_code == 200:
+                break
+
+            time.sleep(pause)
+
+        webbrowser.open(project_url)
+    
+    # Get URL and project ID from an automated deployment.
+    if cli_options.automate_all:
+        # Get project ID.
+        cmd = "railway status --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_id = output_json["id"]
+        request.config.cache.set("project_id", project_id)
+
+        # Get URL
+        cmd = f"railway variables --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        output_json = json.loads(output)
+        project_url = f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
+    
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")
     time.sleep(10)
 
-    # Note: Uncomment this section once your deployment is successful, and 
-    #   project_url is set in the above section.
-    # 
     # Test functionality of both deployed app, and local project.
     #   We want to make sure the deployment works, but also make sure we haven't
     #   affected functionality of the local project using the development server.
-    # remote_functionality_passed = it_utils.check_deployed_app_functionality(
-    #     python_cmd, project_url
-    # )
+    remote_functionality_passed = it_utils.check_deployed_app_functionality(
+        python_cmd, project_url
+    )
     local_functionality_passed = it_utils.check_local_app_functionality(python_cmd)
     log_check_passed = platform_utils.check_log(tmp_project)
 

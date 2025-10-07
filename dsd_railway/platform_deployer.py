@@ -54,6 +54,7 @@ class PlatformDeployer:
 
         # Configure project for deployment to Railway
         self._modify_settings()
+        self._add_railway_toml()
         self._make_static_dir()
         self._add_requirements()
 
@@ -92,12 +93,27 @@ class PlatformDeployer:
 
         plugin_utils.modify_settings_file(template_path)
 
+    def _add_railway_toml(self):
+        """Add a railway.toml file."""
+        msg = "\nAdding a railway.toml file..."
+        plugin_utils.write_output(msg)
+
+        template_path = self.templates_path / "railway.toml"
+        context = {
+            "local_project_name": dsd_config.local_project_name,
+        }
+        contents = plugin_utils.get_template_string(template_path, context)
+
+        # Write file to project.
+        path = dsd_config.project_root / "railway.toml"
+        plugin_utils.add_file(path, contents)
+
     def _make_static_dir(self):
         """Add a static/ dir if needed."""
         msg = "\nAdding a static/ directory and a placeholder text file."
         plugin_utils.write_output(msg)
 
-        path_static = Path("static")
+        path_static = Path("staticfiles")
         plugin_utils.add_dir(path_static)
 
         # Write a placeholder file, to be picked up by Git.
@@ -133,6 +149,26 @@ class PlatformDeployer:
         cmd = f"railway init --name {dsd_config.deployed_project_name}"
         plugin_utils.run_slow_command(cmd)
 
+        # Get project ID.
+        msg = "  Getting project ID..."
+        plugin_utils.write_output(msg)
+        cmd = "railway status --json"
+        output = plugin_utils.run_quick_command(cmd)
+
+        output_json = json.loads(output.stdout.decode())
+        plugin_config.project_id = output_json["id"]
+
+        msg = f"  Project ID: {plugin_config.project_id}"
+        plugin_utils.write_output(msg)
+
+        # Link project.
+        msg = "  Linking project..."
+        plugin_utils.write_output(msg)
+        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
         # Deploy the project.
         msg = "  Pushing code to Railway."
         msg += "\n  You'll see a database error, which will be addressed in the next step."
@@ -156,6 +192,22 @@ class PlatformDeployer:
         # Set env vars.
         self._set_env_vars()
 
+        # Make sure env vars are reading from Postgres values.
+        pause = 10
+        timeout = 60
+        for _ in range(int(timeout/pause)):
+            msg = "  Reading env vars..."
+            plugin_utils.write_output(msg)
+            cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+            output = plugin_utils.run_quick_command(cmd)
+            plugin_utils.write_output(output)
+
+            output_json = json.loads(output.stdout.decode())
+            if output_json["PGUSER"] == "postgres":
+                break
+            
+            time.sleep(pause)
+
         # Redeploy.
         cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
         output = plugin_utils.run_quick_command(cmd)
@@ -169,15 +221,6 @@ class PlatformDeployer:
 
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
-
-        # Get project ID.
-        msg = "  Getting project ID..."
-        plugin_utils.write_output(msg)
-        cmd = "railway status --json"
-        output = plugin_utils.run_quick_command(cmd)
-
-        output_json = json.loads(output.stdout.decode())
-        plugin_config.project_id = output_json["id"]
 
         # Wait {pause} before opening.
         pause = 20
@@ -227,7 +270,7 @@ class PlatformDeployer:
             '--set "PGPORT=${{Postgres.PGPORT}}"',
         ]
 
-        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name}"
+        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name} --skip-deploys"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
 

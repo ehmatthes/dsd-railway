@@ -14,11 +14,18 @@ Configuration-only deployment
 ---
 
 - Install the [Railway CLI](https://docs.railway.com/guides/cli)
-- Log in, using `railway login`. You may need to run `railway login --browserless`.
-- Install `dsd-railway`: `pip install dsd-railway`
-- Add `django_simple_deploy` to `INSTALLED_APPS`
-- Choose a name for your deployed project, and run `python manage.py deploy --deployed-project-name <project-name>`
-- Review and then commit changes.
+- Choose a name for your deployed project, and use it everywhere you see `<project-name>` Run the following commands:
+```sh
+$ railway login # May need to use `railway login --browserless`
+$ pip install dsd-railway
+# Add `django_simple_deploy` to `INSTALLED_APPS`
+$ python manage.py deploy --deployed-project-name <project-name>
+$ git status
+# Review changes
+$ git add .
+$ git commit -m "Configured for deployment to Railway."
+```
+
 - Run the following. (You'll see a bunch of errors after `railway up`. Those errors will go away after creating the database. This is Railway's [recommended approach](https://docs.railway.com/guides/django#deploy-from-the-cli)!)
 ```sh
 $ railway init --name <project-name>
@@ -31,11 +38,16 @@ $ railway variables \
     --set 'PGHOST=${{Postgres.PGHOST}}' \
     --set 'PGPORT=${{Postgres.PGPORT}}' \
     --service <project-name>
-$ railway redeploy --service <project-name>
 $ railway domain --port 8080 --service <project-name>
 ```
 
 After this last command, you should see the URL for your project. You may need to wait a few minutes for the deployment to finish.
+
+If your deployment does not seem to work, you can try redeploying it:
+
+```sh
+$ railway redeploy --service <project-name>
+```
 
 Fully automated deployment
 ---
