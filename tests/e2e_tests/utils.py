@@ -123,7 +123,7 @@ def destroy_project(request):
     else:
         msg = f"  Cached project ID:       {project_id}"
         msg += f"\n  Project ID from env var: {project_id_env_var}"
-        msg += "  Project IDs don't match. Not destroying any remote resources."
+        msg += "\n  Project IDs don't match. Not destroying any remote resources."
         print(msg)
         
         return None
