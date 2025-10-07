@@ -200,11 +200,12 @@ class PlatformDeployer:
             plugin_utils.write_output(msg)
             cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
             output = plugin_utils.run_quick_command(cmd)
+            plugin_utils.write_output(output)
+            
             output_json = json.loads(output.stdout.decode())
             if output_json["PGUSER"] == "postgres":
                 break
             
-            print(output_json)
             time.sleep(pause)
 
         # Redeploy.
