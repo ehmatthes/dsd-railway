@@ -97,10 +97,6 @@ def test_deployment(tmp_project, cli_options, request):
             print(output_json)
             time.sleep(pause)
 
-
-        # cmd = f"railway redeploy --service {app_name} --yes"
-        # make_sp_call(cmd)
-
         cmd = f"railway domain --port 8080 --service {app_name} --json"
         output = make_sp_call(cmd, capture_output=True)
 

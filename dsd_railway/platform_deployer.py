@@ -222,15 +222,6 @@ class PlatformDeployer:
         output_json = json.loads(output.stdout.decode())
         self.deployed_url = output_json["domain"]
 
-        # # Get project ID.
-        # msg = "  Getting project ID..."
-        # plugin_utils.write_output(msg)
-        # cmd = "railway status --json"
-        # output = plugin_utils.run_quick_command(cmd)
-        # 
-        # output_json = json.loads(output.stdout.decode())
-        # plugin_config.project_id = output_json["id"]
-
         # Wait {pause} before opening.
         pause = 20
         msg = f"  Waiting {pause}s for deployment to finish..."
