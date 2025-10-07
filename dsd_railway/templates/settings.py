@@ -20,9 +20,10 @@ if os.environ.get("RAILWAY_PROJECT_NAME", ""):
 
     # Static files config.
     STATIC_URL = 'static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+    STATIC_ROOT = BASE_DIR / "staticfiles"
 
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    i = MIDDLEWARE.index("django.middleware.security.SecurityMiddleware")
+    MIDDLEWARE.insert(i + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
     # Allowed hosts, CSRF.
     ALLOWED_HOSTS = [".up.railway.app"]
