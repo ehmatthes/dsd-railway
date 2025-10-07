@@ -4,6 +4,16 @@ Changelog: dsd-<platformname>
 0.1 - Provisional support for deployments
 ---
 
+### (Unreleased)
+
+#### External changes
+
+- N/A
+
+#### Internal changes
+
+- Checks that cached project ID matches ID from `RAILWAY_PROJECT_ID` in env var before destroying remote e2e test resources.
+
 ### 0.1.2
 
 #### External changes
