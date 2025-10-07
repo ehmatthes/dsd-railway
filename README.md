@@ -38,11 +38,16 @@ $ railway variables \
     --set 'PGHOST=${{Postgres.PGHOST}}' \
     --set 'PGPORT=${{Postgres.PGPORT}}' \
     --service <project-name>
-$ railway redeploy --service <project-name>
 $ railway domain --port 8080 --service <project-name>
 ```
 
 After this last command, you should see the URL for your project. You may need to wait a few minutes for the deployment to finish.
+
+If your deployment does not seem to work, you can try redeploying it:
+
+```sh
+$ railway redeploy --service <project-name>
+```
 
 Fully automated deployment
 ---
