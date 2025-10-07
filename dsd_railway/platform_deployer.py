@@ -201,7 +201,7 @@ class PlatformDeployer:
             cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
             output = plugin_utils.run_quick_command(cmd)
             plugin_utils.write_output(output)
-            
+
             output_json = json.loads(output.stdout.decode())
             if output_json["PGUSER"] == "postgres":
                 break
@@ -279,7 +279,7 @@ class PlatformDeployer:
             '--set "PGPORT=${{Postgres.PGPORT}}"',
         ]
 
-        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name}"
+        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name} --skip-deploys"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
 
