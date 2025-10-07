@@ -131,11 +131,19 @@ def test_deployment(tmp_project, cli_options, request):
     
     # Get URL and project ID from an automated deployment.
     if cli_options.automate_all:
+        # # Get project ID.
+        # cmd = "railway status --json"
+        # output = make_sp_call(cmd, capture_output=True).stdout.decode()
+        # output_json = json.loads(output)
+        # project_id = output_json["id"]
+        # request.config.cache.set("project_id", project_id)
+
+        breakpoint()
         # Get project ID.
-        cmd = "railway status --json"
+        cmd = f"railway variables --service {app_name} --json"
         output = make_sp_call(cmd, capture_output=True).stdout.decode()
         output_json = json.loads(output)
-        project_id = output_json["id"]
+        project_id = output_json["RAILWAY_PROJECT_ID"]
         request.config.cache.set("project_id", project_id)
 
         # Get URL
