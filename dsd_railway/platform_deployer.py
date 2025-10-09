@@ -24,6 +24,7 @@ from django.utils.safestring import mark_safe
 import requests
 
 from . import deploy_messages as platform_msgs
+from . import railway_utils
 from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
@@ -259,25 +260,9 @@ class PlatformDeployer:
         msg = "  Setting environment variables on Railway..."
         plugin_utils.write_output(msg)
 
-        env_vars = [
-            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
-            '--set "PGUSER=${{Postgres.PGUSER}}"',
-            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
-            '--set "PGHOST=${{Postgres.PGHOST}}"',
-            '--set "PGPORT=${{Postgres.PGPORT}}"',
-        ]
-
-        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name} --skip-deploys"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
+        # Configure for Postgres by default.
+        railway_utils.set_postgres_env_vars()
 
         # Wagtail projects need an env var pointing to the settings module.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
-            plugin_utils.write_output("  Setting DJANGO_SETTINGS_MODULE environment variable...")
-
-            # Need form mysite.settings.production
-            dotted_settings_path = ".".join(dsd_config.settings_path.parts[-3:]).removesuffix(".py")
-
-            cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
-            output = plugin_utils.run_quick_command(cmd)
-            plugin_utils.write_output(output)
+            railway_utils.set_wagtail_env_vars()
