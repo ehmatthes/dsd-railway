@@ -146,20 +146,8 @@ class PlatformDeployer:
         plugin_utils.commit_changes()
 
         railway_utils.create_project()
+        railway_utils.get_project_id()
         
-
-        # Get project ID.
-        msg = "  Getting project ID..."
-        plugin_utils.write_output(msg)
-        cmd = "railway status --json"
-        output = plugin_utils.run_quick_command(cmd)
-
-        output_json = json.loads(output.stdout.decode())
-        plugin_config.project_id = output_json["id"]
-
-        msg = f"  Project ID: {plugin_config.project_id}"
-        plugin_utils.write_output(msg)
-
         # Link project.
         msg = "  Linking project..."
         plugin_utils.write_output(msg)

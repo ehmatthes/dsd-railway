@@ -1,5 +1,7 @@
 """Helper functions for interactions with the Railway server."""
 
+import json
+
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
 
@@ -37,3 +39,16 @@ def create_project():
     plugin_utils.write_output("  Initializing empty project on Railway...")
     cmd = f"railway init --name {dsd_config.deployed_project_name}"
     plugin_utils.run_slow_command(cmd)
+
+def get_project_id():
+    """Get the ID of the remote Railway project."""
+    msg = "  Getting project ID..."
+    plugin_utils.write_output(msg)
+
+    cmd = "railway status --json"
+    output = plugin_utils.run_quick_command(cmd)
+    output_json = json.loads(output.stdout.decode())
+    plugin_config.project_id = output_json["id"]
+
+    msg = f"  Project ID: {plugin_config.project_id}"
+    plugin_utils.write_output(msg)
