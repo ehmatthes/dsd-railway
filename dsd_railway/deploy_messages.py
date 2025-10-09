@@ -27,7 +27,7 @@ Okay, cancelling Railway configuration and deployment.
 # DEV: This could be moved to deploy_messages, with an arg for platform and URL.
 cli_not_installed = """
 In order to deploy to Railway, you need to install the Railway CLI.
-  See here: ...
+  See here: https://docs.railway.com/guides/cli
 After installing the CLI, you can run the deploy command again.
 """
 
@@ -35,7 +35,9 @@ cli_logged_out = """
 You are currently logged out of the Railway CLI. Please log in,
   and then run the deploy command again.
 You can log in from  the command line:
-  $ ...
+  $ railway login
+You may need to run the alternate command:
+  $ railway login --browserless
 """
 
 
