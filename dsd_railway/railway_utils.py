@@ -130,7 +130,7 @@ def generate_domain():
     output_json = json.loads(output.stdout.decode())
     return output_json["domain"]
 
-def check_status_200():
+def check_status_200(url):
     """Wait for a 200 status from a freshly-deployed project."""
     pause = 10
     timeout = 300
@@ -138,7 +138,7 @@ def check_status_200():
         msg = "  Checking if deployment is ready..."
         plugin_utils.write_output(msg)
 
-        r = requests.get(self.deployed_url)
+        r = requests.get(url)
         if r.status_code == 200:
             msg = "  200 status returned."
             plugin_utils.write_output(msg)

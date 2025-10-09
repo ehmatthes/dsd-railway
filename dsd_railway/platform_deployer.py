@@ -156,7 +156,7 @@ class PlatformDeployer:
         railway_utils.ensure_pg_env_vars()
         railway_utils.redeploy_project()
         self.deployed_url = railway_utils.generate_domain()
-        railway_utils.check_status_200()
+        railway_utils.check_status_200(self.deployed_url)
 
         webbrowser.open(self.deployed_url)
 
