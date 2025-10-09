@@ -24,7 +24,6 @@ cancel_railway = """
 Okay, cancelling Railway configuration and deployment.
 """
 
-# DEV: This could be moved to deploy_messages, with an arg for platform and URL.
 cli_not_installed = """
 In order to deploy to Railway, you need to install the Railway CLI.
   See here: https://docs.railway.com/guides/cli
@@ -62,13 +61,25 @@ def success_msg(log_output=""):
             $ git add .
             $ git commit -am "Configured project for deployment."
         - Push your project to Railway's servers:
-            $ ...
-        - Open your project:
-            $ ...    
+            # Choose a name for your Railway project.
+            $ railway init --name <project-name>
+            $ railway init --name <project-name>
+            $ railway up
+            $ railway add --database postgres
+            $ railway variables \
+                --set 'PGDATABASE=${{Postgres.PGDATABASE}}' \
+                --set 'PGUSER=${{Postgres.PGUSER}}' \
+                --set 'PGPASSWORD=${{Postgres.PGPASSWORD}}' \
+                --set 'PGHOST=${{Postgres.PGHOST}}' \
+                --set 'PGPORT=${{Postgres.PGPORT}}' \
+                --service <project-name>
+            $ railway domain --port 8080 --service <project-name>
+        - After running `railway domain`, you should see the deployed URL for 
+          your project.
         - As you develop your project further:
             - Make local changes
             - Commit your local changes
-            - Run `...` again to push your changes.
+            - Run `railway up` again to push your changes.
     """
     )
 
