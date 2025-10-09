@@ -145,17 +145,13 @@ class PlatformDeployer:
         railway_utils.get_project_id()
         railway_utils.link_project()
         railway_utils.push_project()
+        railway_utils.add_database()
+        railway_utils.set_postgres_env_vars()
 
-        # Add a database.
-        msg = "  Adding a database..."
-        plugin_utils.write_output(msg)
-
-        cmd = "railway add --database postgres"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Set env vars.
-        self._set_env_vars()
+        # Wagtail projects need an env var pointing to the settings module.
+        # DEV: This will be `if dsd_config.wagtail_project` shortly.
+        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
+            railway_utils.set_wagtail_env_vars()
 
         # Make sure env vars are reading from Postgres values.
         pause = 10
@@ -217,16 +213,3 @@ class PlatformDeployer:
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
-
-    
-    def _set_env_vars(self):
-        """Set required environment variables for Railway."""
-        msg = "  Setting environment variables on Railway..."
-        plugin_utils.write_output(msg)
-
-        # Configure for Postgres by default.
-        railway_utils.set_postgres_env_vars()
-
-        # Wagtail projects need an env var pointing to the settings module.
-        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
-            railway_utils.set_wagtail_env_vars()
