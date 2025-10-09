@@ -2,6 +2,9 @@
 
 import json
 import subprocess
+import time
+
+import requests
 
 from .plugin_config import plugin_config
 
@@ -99,7 +102,7 @@ def ensure_pg_env_vars():
     for _ in range(int(timeout/pause)):
         msg = "  Reading env vars..."
         plugin_utils.write_output(msg)
-        
+
         cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
         output = plugin_utils.run_quick_command(cmd)
         plugin_utils.write_output(output)
@@ -108,4 +111,37 @@ def ensure_pg_env_vars():
         if output_json["PGUSER"] == "postgres":
             break
         
+        time.sleep(pause)
+
+def redeploy_project():
+    """Redeploy the project, usually after env vars have become active."""
+    cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
+def generate_domain():
+    """Generate a Railway domain for the project."""
+    msg = "  Generating a Railway domain..."
+    plugin_utils.write_output(msg)
+
+    cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
+    output = plugin_utils.run_quick_command(cmd)
+
+    output_json = json.loads(output.stdout.decode())
+    return output_json["domain"]
+
+def check_status_200():
+    """Wait for a 200 status from a freshly-deployed project."""
+    pause = 10
+    timeout = 300
+    for _ in range(int(timeout/pause)):
+        msg = "  Checking if deployment is ready..."
+        plugin_utils.write_output(msg)
+
+        r = requests.get(self.deployed_url)
+        if r.status_code == 200:
+            msg = "  200 status returned."
+            plugin_utils.write_output(msg)
+            break
+
         time.sleep(pause)

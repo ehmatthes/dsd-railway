@@ -155,32 +155,8 @@ class PlatformDeployer:
 
         railway_utils.ensure_pg_env_vars()
         railway_utils.redeploy_project()
-
-        # Generate a Railway domain.
-        msg = "  Generating a Railway domain..."
-        plugin_utils.write_output(msg)
-        cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-
-        output_json = json.loads(output.stdout.decode())
-        self.deployed_url = output_json["domain"]
-
-        # Wait {pause} before opening.
-        pause = 20
-        msg = f"  Waiting {pause}s for deployment to finish..."
-        plugin_utils.write_output(msg)
-
-        # Wait for a 200 response.
-        pause = 10
-        timeout = 300
-        for _ in range(int(timeout/pause)):
-            msg = "  Checking if deployment is ready..."
-            plugin_utils.write_output(msg)
-            r = requests.get(self.deployed_url)
-            if r.status_code == 200:
-                break
-
-            time.sleep(pause)
+        self.deployed_url = railway_utils.generate_domain()
+        railway_utils.check_status_200()
 
         webbrowser.open(self.deployed_url)
 
