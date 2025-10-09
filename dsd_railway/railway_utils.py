@@ -31,3 +31,9 @@ def set_wagtail_env_vars():
     cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
+
+def create_project():
+    """Create a new project on Railway."""
+    plugin_utils.write_output("  Initializing empty project on Railway...")
+    cmd = f"railway init --name {dsd_config.deployed_project_name}"
+    plugin_utils.run_slow_command(cmd)

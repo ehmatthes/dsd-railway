@@ -145,10 +145,8 @@ class PlatformDeployer:
 
         plugin_utils.commit_changes()
 
-        # Initialize empty project on Railway.
-        plugin_utils.write_output("  Initializing empty project on Railway...")
-        cmd = f"railway init --name {dsd_config.deployed_project_name}"
-        plugin_utils.run_slow_command(cmd)
+        railway_utils.create_project()
+        
 
         # Get project ID.
         msg = "  Getting project ID..."
