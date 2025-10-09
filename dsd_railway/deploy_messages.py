@@ -101,15 +101,14 @@ def success_msg_automate_all(deployed_url, project_id):
 
         --- Your project should now be deployed on Railway ---
 
-        It should have opened up in a new browser tab. If you see a
-          "server not available" message, wait a minute or two and
-          refresh the tab. It sometimes takes a few minutes for the
-          server to be ready.
+        It should have opened up in a new browser tab. If you see an error
+          message, wait a minute or two and refresh the tab. It sometimes
+          takes a few minutes for the server to be ready.
         - You can also visit your project at {deployed_url}
         - Project ID: {project_id}
 
         If you make further changes and want to push them to Railway,
-        commit your changes and then run `...`.
+        commit your changes and then run `railway up`.
     """
     )
     return msg
