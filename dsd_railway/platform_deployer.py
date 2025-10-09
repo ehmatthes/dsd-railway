@@ -154,12 +154,7 @@ class PlatformDeployer:
             railway_utils.set_wagtail_env_vars()
 
         railway_utils.ensure_pg_env_vars()
-
-
-        # Redeploy.
-        cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
+        railway_utils.redeploy_project()
 
         # Generate a Railway domain.
         msg = "  Generating a Railway domain..."
