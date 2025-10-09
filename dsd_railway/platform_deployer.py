@@ -241,9 +241,6 @@ class PlatformDeployer:
 
         webbrowser.open(self.deployed_url)
 
-        msg = f"  If you get an error page, refresh the browser in a minute or two."
-        plugin_utils.write_output(msg)
-
 
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.
