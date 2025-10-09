@@ -2,6 +2,8 @@
 
 import json
 
+from .plugin_config import plugin_config
+
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
 
@@ -52,3 +54,25 @@ def get_project_id():
 
     msg = f"  Project ID: {plugin_config.project_id}"
     plugin_utils.write_output(msg)
+
+def link_project():
+    """Link the local project to the remote Railway project."""
+    msg = "  Linking project..."
+    plugin_utils.write_output(msg)
+    cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
+
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
+def push_project():
+    """Push a local project to a remote Railway project."""
+    msg = "  Pushing code to Railway."
+    msg += "\n  You'll see a database error, which will be addressed in the next step."
+    plugin_utils.write_output(msg)
+    
+    cmd = "railway up"
+    try:
+        plugin_utils.run_slow_command(cmd)
+    except subprocess.CalledProcessError:
+        msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
+        plugin_utils.write_output(msg)

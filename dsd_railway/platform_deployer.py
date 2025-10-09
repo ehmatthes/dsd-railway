@@ -134,11 +134,7 @@ class PlatformDeployer:
         plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
-        """Finish automating the push to Railway.
-
-        - Commit all changes.
-        - ...
-        """
+        """Finish automating the push to Railway."""
         # Making this check here lets deploy() be cleaner.
         if not dsd_config.automate_all:
             return
@@ -147,26 +143,8 @@ class PlatformDeployer:
 
         railway_utils.create_project()
         railway_utils.get_project_id()
-        
-        # Link project.
-        msg = "  Linking project..."
-        plugin_utils.write_output(msg)
-        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
-
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Deploy the project.
-        msg = "  Pushing code to Railway."
-        msg += "\n  You'll see a database error, which will be addressed in the next step."
-        plugin_utils.write_output(msg)
-        
-        cmd = "railway up"
-        try:
-            plugin_utils.run_slow_command(cmd)
-        except subprocess.CalledProcessError:
-            msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
-            plugin_utils.write_output(msg)
+        railway_utils.link_project()
+        railway_utils.push_project()
 
         # Add a database.
         msg = "  Adding a database..."
