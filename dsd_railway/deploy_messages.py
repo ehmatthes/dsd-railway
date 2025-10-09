@@ -9,9 +9,14 @@ from django.conf import settings
 
 confirm_automate_all = """
 The --automate-all flag means django-simple-deploy will:
-- ...
+- Configure your project for deployment to Railway.
 - Commit all changes to your project that are necessary for deployment.
-- Push these changes to Railway.
+- Create a new project on Railway.
+- Link your local project repo to the new remote Railway project.
+- Push your code to Railway.
+- Create a Postgres database.
+- Set appropriate environment variables on Railway.
+- Generate a Railway domain for your project.
 - Open your deployed project in a new browser tab.
 """
 
