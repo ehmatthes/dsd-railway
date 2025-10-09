@@ -153,21 +153,8 @@ class PlatformDeployer:
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             railway_utils.set_wagtail_env_vars()
 
-        # Make sure env vars are reading from Postgres values.
-        pause = 10
-        timeout = 60
-        for _ in range(int(timeout/pause)):
-            msg = "  Reading env vars..."
-            plugin_utils.write_output(msg)
-            cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-            output = plugin_utils.run_quick_command(cmd)
-            plugin_utils.write_output(output)
+        railway_utils.ensure_pg_env_vars()
 
-            output_json = json.loads(output.stdout.decode())
-            if output_json["PGUSER"] == "postgres":
-                break
-            
-            time.sleep(pause)
 
         # Redeploy.
         cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"

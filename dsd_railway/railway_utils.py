@@ -86,3 +86,26 @@ def set_wagtail_env_vars():
     cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
+
+def ensure_pg_env_vars():
+    """Make sure the Postgres environment variables are active.
+    
+    Django settings will be incorrect if the environment variables for the app
+    are not yet referencing the database config. Make sure the references are
+    active before proceeding.
+    """
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout/pause)):
+        msg = "  Reading env vars..."
+        plugin_utils.write_output(msg)
+        
+        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        output_json = json.loads(output.stdout.decode())
+        if output_json["PGUSER"] == "postgres":
+            break
+        
+        time.sleep(pause)
