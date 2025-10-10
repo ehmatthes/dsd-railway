@@ -87,25 +87,14 @@ def test_gitignore(tmp_project):
 
 # --- Test Railway-specific files ---
 
-# Example test for a platform-specicific file such as Fly's Dockerfile
-# def test_creates_dockerfile(tmp_project, pkg_manager):
-#     """Verify that dockerfile is created correctly."""
-#     if pkg_manager == "req_txt":
-#         hf.check_reference_file(tmp_project, "dockerfile", "dsd-flyio")
-#     elif pkg_manager == "poetry":
-#         hf.check_reference_file(
-#             tmp_project,
-#             "dockerfile",
-#             "dsd-flyio",
-#             reference_filename="poetry.dockerfile",
-#         )
-#     elif pkg_manager == "pipenv":
-#         hf.check_reference_file(
-#             tmp_project,
-#             "dockerfile",
-#             "dsd-flyio",
-#             reference_filename="pipenv.dockerfile",
-#         )
+def test_creates_railway_toml(tmp_project, pkg_manager):
+    """Verify that railway.toml file is created correctly."""
+    hf.check_reference_file(
+        tmp_project,
+        "railway.toml",
+        "dsd-railway",
+        reference_filename="railway.toml",
+    )
 
 
 # --- Test logs ---
