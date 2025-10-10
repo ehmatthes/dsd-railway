@@ -13,15 +13,8 @@ Add a new file to the user's project, using a template:
         contents = plugin_utils.get_template_string(template_path, context)
 """
 
-import sys, os, re, json
-import subprocess
-import time
 import webbrowser
 from pathlib import Path
-
-from django.utils.safestring import mark_safe
-
-import requests
 
 from . import deploy_messages as platform_msgs
 from . import railway_utils
@@ -29,9 +22,6 @@ from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
-from django_simple_deploy.management.commands.utils.command_errors import (
-    DSDCommandError,
-)
 
 
 class PlatformDeployer:
@@ -78,8 +68,8 @@ class PlatformDeployer:
         if not dsd_config.deployed_project_name:
             dsd_config.deployed_project_name = dsd_config.local_project_name
 
+        # Unit tests don't use the CLI.
         if dsd_config.unit_testing:
-            # Unit tests don't use the CLI.
             return
         
         railway_utils.validate_cli()
