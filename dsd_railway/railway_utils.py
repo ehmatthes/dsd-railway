@@ -7,9 +7,38 @@ import time
 import requests
 
 from .plugin_config import plugin_config
+from . import deploy_messages as platform_msgs
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
+from django_simple_deploy.management.commands.utils.command_errors import (
+    DSDCommandError,
+)
+
+
+def validate_cli():
+    """Make sure CLI is installed, and user is authenticated."""
+    cmd = "railway whoami"
+
+    # Generates a FileNotFoundError on macOS and Ubuntu if CLI not installed.
+    try:
+        output_obj = plugin_utils.run_quick_command(cmd)
+    except FileNotFoundError:
+        raise DSDCommandError(platform_msgs.cli_not_installed)
+    
+    plugin_utils.log_info(output_obj)
+    stdout = output_obj.stdout.decode()
+    stderr = output_obj.stderr.decode()
+
+    if "Logged in as " in stdout:
+        return
+    
+    if "Unauthorized. Please login" in stderr:
+        raise DSDCommandError(platform_msgs.cli_logged_out)
+    
+    # No logged in or unauthorized message. Don't try to use CLI.
+    msg = "Output of `railway whomai` unrecognized. Do you have the CLI installed?"
+    raise DSDCommandError(msg)
 
 
 def create_project():

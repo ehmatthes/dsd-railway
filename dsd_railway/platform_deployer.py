@@ -67,6 +67,8 @@ class PlatformDeployer:
     def _validate_platform(self):
         """Make sure the local environment and project supports deployment to Railway.
 
+        Make sure CLI is installed, and user is authenticated.
+
         Returns:
             None
         Raises:
@@ -76,11 +78,16 @@ class PlatformDeployer:
         if not dsd_config.deployed_project_name:
             dsd_config.deployed_project_name = dsd_config.local_project_name
 
+        if dsd_config.unit_testing:
+            # Unit tests don't use the CLI.
+            return
+        
+        railway_utils.validate_cli()
+
+
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
         pass
-
-
 
     def _modify_settings(self):
         """Add Railway-specific settings."""
