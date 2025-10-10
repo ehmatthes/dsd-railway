@@ -46,7 +46,7 @@ class PlatformDeployer:
         # Configure project for deployment to Railway
         self._modify_settings()
         self._add_railway_toml()
-        self._make_static_dir()
+        self._make_staticfiles_dir()
         self._add_requirements()
 
         self._conclude_automate_all()
@@ -106,7 +106,7 @@ class PlatformDeployer:
         path = dsd_config.project_root / "railway.toml"
         plugin_utils.add_file(path, contents)
 
-    def _make_static_dir(self):
+    def _make_staticfiles_dir(self):
         """Add a static/ dir if needed."""
         msg = "\nAdding a static/ directory and a placeholder text file."
         plugin_utils.write_output(msg)
