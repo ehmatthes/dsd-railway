@@ -25,7 +25,7 @@ class PluginCLI:
         plugin_group.add_argument(
             "--db",
             type=str,
-            help="What kind of database? postgres (default) | sqlite",
+            help="Specify the database to be used: postgres (default) | sqlite",
             default="postgres",
         )
 
