@@ -4,15 +4,21 @@ Changelog: dsd-<platformname>
 0.1 - Provisional support for deployments
 ---
 
-### (Unreleased)
+### 0.1.3
 
 #### External changes
 
-- N/A
+- More complete user-facing messages.
+- Validates CLI.
 
 #### Internal changes
 
 - Checks that cached project ID matches ID from `RAILWAY_PROJECT_ID` in env var before destroying remote e2e test resources.
+- Moved work to relevant utils modules.
+- Integration test for railway.toml.
+- Integration test for staticfiles/placeholder.txt.
+- Confirms API token available before running e2e test.
+- Ran `black`.
 
 ### 0.1.2
 
