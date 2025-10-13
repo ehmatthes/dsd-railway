@@ -7,10 +7,26 @@ from pprint import pprint
 import webbrowser
 
 import requests
+import pytest
 
 from tests.e2e_tests.utils import it_helper_functions as it_utils
 from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
+
+def check_railway_api_token():
+    """Make sure api token is available before running e2e test.
+    
+    This isn't perfect, because the user is still asked if they want to destroy
+    the project by core. That's a bit more work to sort out. This is still better
+    than running tests, and then having to manually destroy the test project.
+    """
+    railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
+    if railway_token is None:
+        msg = "\nPlease set the RAILWAY_API_TOKEN environment variable and then run this test."
+        msg += "\nThe token is needed in order to destroy the test project during cleanup."
+        print(msg)
+
+        pytest.exit(msg)
 
 def automate_all_steps(request, app_name):
     """Carry out steps needed to test an --automate-all run."""

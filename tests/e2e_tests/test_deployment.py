@@ -31,6 +31,8 @@ def test_deployment(tmp_project, cli_options, request):
     print("\nTesting deployment to Railway using the following options:")
     print(cli_options.__dict__)
 
+    platform_utils.check_railway_api_token()
+
     python_cmd = it_utils.get_python_exe(tmp_project)
 
     # Run simple_deploy against the test project.
