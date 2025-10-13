@@ -44,9 +44,9 @@ def test_deployment(tmp_project, cli_options, request):
     request.config.cache.set("app_name", app_name)
 
     if cli_options.automate_all:
-        project_url = platform_utils.automate_all_steps()
+        project_url = platform_utils.automate_all_steps(app_name)
     else:
-        project_url = platform_utils.config_only_steps()
+        project_url = platform_utils.config_only_steps(app_name)
     
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")
