@@ -87,6 +87,7 @@ def test_gitignore(tmp_project):
 
 # --- Test Railway-specific files ---
 
+
 def test_creates_railway_toml(tmp_project):
     """Verify that railway.toml file is created correctly."""
     hf.check_reference_file(
@@ -98,6 +99,7 @@ def test_creates_railway_toml(tmp_project):
 
 
 # --- Test static file config ---
+
 
 def test_static_dir(tmp_project):
     """Verify that the placeholder.txt file is in the staticfiles/ dir."""

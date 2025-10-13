@@ -15,7 +15,7 @@ from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 def check_railway_api_token():
     """Make sure api token is available before running e2e test.
-    
+
     This isn't perfect, because the user is still asked if they want to destroy
     the project by core. That's a bit more work to sort out. This is still better
     than running tests, and then having to manually destroy the test project.
@@ -23,10 +23,13 @@ def check_railway_api_token():
     railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
     if railway_token is None:
         msg = "\nPlease set the RAILWAY_API_TOKEN environment variable and then run this test."
-        msg += "\nThe token is needed in order to destroy the test project during cleanup."
+        msg += (
+            "\nThe token is needed in order to destroy the test project during cleanup."
+        )
         print(msg)
 
         pytest.exit(msg)
+
 
 def automate_all_steps(request, app_name):
     """Carry out steps needed to test an --automate-all run."""
@@ -81,7 +84,7 @@ def config_only_steps(request, app_name):
     # Make sure env vars are reading from Postgres values.
     pause = 10
     timeout = 60
-    for _ in range(int(timeout/pause)):
+    for _ in range(int(timeout / pause)):
         msg = "  Reading env vars..."
         print(msg)
         cmd = f"railway variables --service {app_name} --json"
@@ -89,7 +92,7 @@ def config_only_steps(request, app_name):
         output_json = json.loads(output.stdout.decode())
         if output_json["PGUSER"] == "postgres":
             break
-        
+
         print(output_json)
         time.sleep(pause)
 
@@ -102,7 +105,7 @@ def config_only_steps(request, app_name):
     # Wait for a 200 response.
     pause = 10
     timeout = 300
-    for _ in range(int(timeout/pause)):
+    for _ in range(int(timeout / pause)):
         msg = "  Checking if deployment is ready..."
         print(msg)
         r = requests.get(project_url)
@@ -145,19 +148,19 @@ def destroy_project(request):
     if not project_id:
         print("  No project id found; can't destroy any remote resources.")
         return None
-    
+
     app_name = request.config.cache.get("app_name", None)
     if not app_name:
         print("  No app_name available; can't destroy any remote resources.")
         return None
-    
+
     # Get project ID from env vars, and make sure it matches cached value.
     print("  Checking that project IDs match...")
     cmd = f"railway variables --service {app_name} --json"
     output = make_sp_call(cmd, capture_output=True)
     output_json = json.loads(output.stdout.decode())
     project_id_env_var = output_json["RAILWAY_PROJECT_ID"]
-    
+
     if project_id_env_var == project_id:
         print("    Project IDs match.")
     else:
@@ -165,7 +168,7 @@ def destroy_project(request):
         msg += f"\n  Project ID from env var: {project_id_env_var}"
         msg += "\n  Project IDs don't match. Not destroying any remote resources."
         print(msg)
-        
+
         return None
 
     print("  Destroying Railway project...")

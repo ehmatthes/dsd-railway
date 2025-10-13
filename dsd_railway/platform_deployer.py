@@ -71,9 +71,8 @@ class PlatformDeployer:
         # Unit tests don't use the CLI.
         if dsd_config.unit_testing:
             return
-        
-        railway_utils.validate_cli()
 
+        railway_utils.validate_cli()
 
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
@@ -157,14 +156,15 @@ class PlatformDeployer:
 
         webbrowser.open(self.deployed_url)
 
-
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.
 
         Describe ongoing approach of commit, push, migrate.
         """
         if dsd_config.automate_all:
-            msg = platform_msgs.success_msg_automate_all(self.deployed_url, plugin_config.project_id)
+            msg = platform_msgs.success_msg_automate_all(
+                self.deployed_url, plugin_config.project_id
+            )
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)

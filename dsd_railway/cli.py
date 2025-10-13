@@ -19,7 +19,7 @@ class PluginCLI:
         group_desc = "Plugin-specific CLI args for dsd-railway"
         plugin_group = parser.add_argument_group(
             title="Options for dsd-railway",
-            description = group_desc,
+            description=group_desc,
         )
 
         # plugin_group.add_argument(
