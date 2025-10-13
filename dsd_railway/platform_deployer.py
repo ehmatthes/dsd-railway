@@ -83,12 +83,25 @@ class PlatformDeployer:
         msg = "\nAdding a Railway-specific settings block."
         plugin_utils.write_output(msg)
 
+        # Get DATABASES setting.
+        if plugin_config.db == "postgres":
+            path_db_block = self.templates_path / "db_block_postgres.py"
+            db_block = path_db_block.read_text()
+
+        # Get correct settings template.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             template_path = self.templates_path / "settings_wagtail.py"
         else:
             template_path = self.templates_path / "settings.py"
 
-        plugin_utils.modify_settings_file(template_path)
+            # Non-wagtail projects need an indented settings block.
+            db_block = db_block.replace("\n", "\n    ")
+        
+        context = {
+            "database_block": db_block,
+        }
+
+        plugin_utils.modify_settings_file(template_path, context)
 
     def _add_railway_toml(self):
         """Add a railway.toml file."""
