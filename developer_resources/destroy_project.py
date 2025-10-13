@@ -34,9 +34,7 @@ headers = {
     "Content-Type": "application/json",
 }
 
-payload = {
-    "query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'
-}
+payload = {"query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'}
 
 r = requests.post(base_url, headers=headers, json=payload, timeout=30)
 data = r.json()

@@ -1,78 +1,121 @@
-"""Helper functions specific to {{PlatformmName}}.
+"""Helper functions specific to dsd-railway e2e tests."""
 
-Some Fly.io functions are included as an example.
-"""
-
-import re, time
+import time
 import json
 import os
 from pprint import pprint
+import webbrowser
 
 import requests
+import pytest
 
+from tests.e2e_tests.utils import it_helper_functions as it_utils
 from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 
-# def create_project():
-#     """Create a project on Fly.io."""
-#     print("\n\nCreating a project on Fly.io...")
-#     output = (
-#         make_sp_call(f"fly apps create --generate-name", capture_output=True)
-#         .stdout.decode()
-#         .strip()
-#     )
-#     print("create_project output:", output)
+def check_railway_api_token():
+    """Make sure api token is available before running e2e test.
 
-#     re_app_name = r"New app created: (.*)"
-#     app_name = re.search(re_app_name, output).group(1)
-#     print(f"  App name: {app_name}")
+    This isn't perfect, because the user is still asked if they want to destroy
+    the project by core. That's a bit more work to sort out. This is still better
+    than running tests, and then having to manually destroy the test project.
+    """
+    railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
+    if railway_token is None:
+        msg = "\nPlease set the RAILWAY_API_TOKEN environment variable and then run this test."
+        msg += (
+            "\nThe token is needed in order to destroy the test project during cleanup."
+        )
+        print(msg)
 
-#     return app_name
-
-
-# def deploy_project(app_name):
-#     """Make a non-automated deployment."""
-#     # Consider pausing before the deployment. Some platforms need a moment
-#     #   for the newly-created resources to become fully available.
-#     # time.sleep(30)
-
-#     print("Deploying to Fly.io...")
-#     make_sp_call("fly deploy")
-
-#     # Open project and get URL.
-#     output = (
-#         make_sp_call(f"fly apps open -a {app_name}", capture_output=True)
-#         .stdout.decode()
-#         .strip()
-#     )
-#     print("fly open output:", output)
-
-#     re_url = r"opening (http.*) \.\.\."
-#     project_url = re.search(re_url, output).group(1)
-#     if "https" not in project_url:
-#         project_url = project_url.replace("http", "https")
-
-#     print(f"  Project URL: {project_url}")
-
-#     return project_url
+        pytest.exit(msg)
 
 
-# def get_project_url_name():
-#     """Get project URL and app name of a deployed project.
-#     This is used when testing the automate_all workflow.
-#     """
-#     output = (
-#         make_sp_call("fly status --json", capture_output=True).stdout.decode().strip()
-#     )
-#     status_json = json.loads(output)
+def automate_all_steps(request, app_name):
+    """Carry out steps needed to test an --automate-all run."""
+    # Get project ID.
+    cmd = "railway status --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    project_id = output_json["id"]
+    request.config.cache.set("project_id", project_id)
 
-#     app_name = status_json["Name"]
-#     project_url = f"https://{app_name}.fly.dev"
+    # Get URL
+    cmd = f"railway variables --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    return f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
 
-#     print(f"  Found app name: {app_name}")
-#     print(f"  Project URL: {project_url}")
 
-#     return project_url, app_name
+def config_only_steps(request, app_name):
+    """Carry out steps that users would in the configuration-only workflow."""
+    it_utils.commit_configuration_changes()
+
+    cmd = f"railway init --name {app_name}"
+    make_sp_call(cmd)
+
+    # Get project ID.
+    cmd = "railway status --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    project_id = output_json["id"]
+    request.config.cache.set("project_id", project_id)
+
+    # Link project.
+    cmd = f"railway link --project {project_id} --service {app_name}"
+    make_sp_call(cmd)
+
+    cmd = "railway up"
+    make_sp_call(cmd)
+
+    cmd = "railway add --database postgres"
+    make_sp_call(cmd)
+
+    env_vars = [
+        '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+        '--set "PGUSER=${{Postgres.PGUSER}}"',
+        '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+        '--set "PGHOST=${{Postgres.PGHOST}}"',
+        '--set "PGPORT=${{Postgres.PGPORT}}"',
+    ]
+    cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
+    make_sp_call(cmd)
+
+    # Make sure env vars are reading from Postgres values.
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        print(msg)
+        cmd = f"railway variables --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True)
+        output_json = json.loads(output.stdout.decode())
+        if output_json["PGUSER"] == "postgres":
+            break
+
+        print(output_json)
+        time.sleep(pause)
+
+    cmd = f"railway domain --port 8080 --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True)
+
+    output_json = json.loads(output.stdout.decode())
+    project_url = output_json["domain"]
+
+    # Wait for a 200 response.
+    pause = 10
+    timeout = 300
+    for _ in range(int(timeout / pause)):
+        msg = "  Checking if deployment is ready..."
+        print(msg)
+        r = requests.get(project_url)
+        if r.status_code == 200:
+            break
+
+        time.sleep(pause)
+
+    webbrowser.open(project_url)
+    return project_url
 
 
 def check_log(tmp_proj_dir):
@@ -105,19 +148,19 @@ def destroy_project(request):
     if not project_id:
         print("  No project id found; can't destroy any remote resources.")
         return None
-    
+
     app_name = request.config.cache.get("app_name", None)
     if not app_name:
         print("  No app_name available; can't destroy any remote resources.")
         return None
-    
+
     # Get project ID from env vars, and make sure it matches cached value.
     print("  Checking that project IDs match...")
     cmd = f"railway variables --service {app_name} --json"
     output = make_sp_call(cmd, capture_output=True)
     output_json = json.loads(output.stdout.decode())
     project_id_env_var = output_json["RAILWAY_PROJECT_ID"]
-    
+
     if project_id_env_var == project_id:
         print("    Project IDs match.")
     else:
@@ -125,7 +168,7 @@ def destroy_project(request):
         msg += f"\n  Project ID from env var: {project_id_env_var}"
         msg += "\n  Project IDs don't match. Not destroying any remote resources."
         print(msg)
-        
+
         return None
 
     print("  Destroying Railway project...")

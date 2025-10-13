@@ -13,24 +13,15 @@ Add a new file to the user's project, using a template:
         contents = plugin_utils.get_template_string(template_path, context)
 """
 
-import sys, os, re, json
-import subprocess
-import time
 import webbrowser
 from pathlib import Path
 
-from django.utils.safestring import mark_safe
-
-import requests
-
 from . import deploy_messages as platform_msgs
+from . import railway_utils
 from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
-from django_simple_deploy.management.commands.utils.command_errors import (
-    DSDCommandError,
-)
 
 
 class PlatformDeployer:
@@ -55,7 +46,7 @@ class PlatformDeployer:
         # Configure project for deployment to Railway
         self._modify_settings()
         self._add_railway_toml()
-        self._make_static_dir()
+        self._make_staticfiles_dir()
         self._add_requirements()
 
         self._conclude_automate_all()
@@ -66,6 +57,8 @@ class PlatformDeployer:
     def _validate_platform(self):
         """Make sure the local environment and project supports deployment to Railway.
 
+        Make sure CLI is installed, and user is authenticated.
+
         Returns:
             None
         Raises:
@@ -75,11 +68,15 @@ class PlatformDeployer:
         if not dsd_config.deployed_project_name:
             dsd_config.deployed_project_name = dsd_config.local_project_name
 
+        # Unit tests don't use the CLI.
+        if dsd_config.unit_testing:
+            return
+
+        railway_utils.validate_cli()
+
     def _prep_automate_all(self):
         """Take any further actions needed if using automate_all."""
         pass
-
-
 
     def _modify_settings(self):
         """Add Railway-specific settings."""
@@ -108,7 +105,7 @@ class PlatformDeployer:
         path = dsd_config.project_root / "railway.toml"
         plugin_utils.add_file(path, contents)
 
-    def _make_static_dir(self):
+    def _make_staticfiles_dir(self):
         """Add a static/ dir if needed."""
         msg = "\nAdding a static/ directory and a placeholder text file."
         plugin_utils.write_output(msg)
@@ -133,117 +130,31 @@ class PlatformDeployer:
         plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
-        """Finish automating the push to Railway.
-
-        - Commit all changes.
-        - ...
-        """
+        """Finish automating the push to Railway."""
         # Making this check here lets deploy() be cleaner.
         if not dsd_config.automate_all:
             return
 
         plugin_utils.commit_changes()
 
-        # Initialize empty project on Railway.
-        plugin_utils.write_output("  Initializing empty project on Railway...")
-        cmd = f"railway init --name {dsd_config.deployed_project_name}"
-        plugin_utils.run_slow_command(cmd)
+        railway_utils.create_project()
+        railway_utils.get_project_id()
+        railway_utils.link_project()
+        railway_utils.push_project()
+        railway_utils.add_database()
+        railway_utils.set_postgres_env_vars()
 
-        # Get project ID.
-        msg = "  Getting project ID..."
-        plugin_utils.write_output(msg)
-        cmd = "railway status --json"
-        output = plugin_utils.run_quick_command(cmd)
+        # Wagtail projects need an env var pointing to the settings module.
+        # DEV: This will be `if dsd_config.wagtail_project` shortly.
+        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
+            railway_utils.set_wagtail_env_vars()
 
-        output_json = json.loads(output.stdout.decode())
-        plugin_config.project_id = output_json["id"]
-
-        msg = f"  Project ID: {plugin_config.project_id}"
-        plugin_utils.write_output(msg)
-
-        # Link project.
-        msg = "  Linking project..."
-        plugin_utils.write_output(msg)
-        cmd = f"railway link --project {plugin_config.project_id} --service {dsd_config.deployed_project_name}"
-
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Deploy the project.
-        msg = "  Pushing code to Railway."
-        msg += "\n  You'll see a database error, which will be addressed in the next step."
-        plugin_utils.write_output(msg)
-        
-        cmd = "railway up"
-        try:
-            plugin_utils.run_slow_command(cmd)
-        except subprocess.CalledProcessError:
-            msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
-            plugin_utils.write_output(msg)
-
-        # Add a database.
-        msg = "  Adding a database..."
-        plugin_utils.write_output(msg)
-
-        cmd = "railway add --database postgres"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Set env vars.
-        self._set_env_vars()
-
-        # Make sure env vars are reading from Postgres values.
-        pause = 10
-        timeout = 60
-        for _ in range(int(timeout/pause)):
-            msg = "  Reading env vars..."
-            plugin_utils.write_output(msg)
-            cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-            output = plugin_utils.run_quick_command(cmd)
-            plugin_utils.write_output(output)
-
-            output_json = json.loads(output.stdout.decode())
-            if output_json["PGUSER"] == "postgres":
-                break
-            
-            time.sleep(pause)
-
-        # Redeploy.
-        cmd = f"railway redeploy --service {dsd_config.deployed_project_name} --yes"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Generate a Railway domain.
-        msg = "  Generating a Railway domain..."
-        plugin_utils.write_output(msg)
-        cmd = f"railway domain --port 8080 --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-
-        output_json = json.loads(output.stdout.decode())
-        self.deployed_url = output_json["domain"]
-
-        # Wait {pause} before opening.
-        pause = 20
-        msg = f"  Waiting {pause}s for deployment to finish..."
-        plugin_utils.write_output(msg)
-
-        # Wait for a 200 response.
-        pause = 10
-        timeout = 300
-        for _ in range(int(timeout/pause)):
-            msg = "  Checking if deployment is ready..."
-            plugin_utils.write_output(msg)
-            r = requests.get(self.deployed_url)
-            if r.status_code == 200:
-                break
-
-            time.sleep(pause)
+        railway_utils.ensure_pg_env_vars()
+        railway_utils.redeploy_project()
+        self.deployed_url = railway_utils.generate_domain()
+        railway_utils.check_status_200(self.deployed_url)
 
         webbrowser.open(self.deployed_url)
-
-        msg = f"  If you get an error page, refresh the browser in a minute or two."
-        plugin_utils.write_output(msg)
-
 
     def _show_success_message(self):
         """After a successful run, show a message about what to do next.
@@ -251,36 +162,9 @@ class PlatformDeployer:
         Describe ongoing approach of commit, push, migrate.
         """
         if dsd_config.automate_all:
-            msg = platform_msgs.success_msg_automate_all(self.deployed_url, plugin_config.project_id)
+            msg = platform_msgs.success_msg_automate_all(
+                self.deployed_url, plugin_config.project_id
+            )
         else:
             msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
-
-    
-    def _set_env_vars(self):
-        """Set required environment variables for Railway."""
-        msg = "  Setting environment variables on Railway..."
-        plugin_utils.write_output(msg)
-
-        env_vars = [
-            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
-            '--set "PGUSER=${{Postgres.PGUSER}}"',
-            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
-            '--set "PGHOST=${{Postgres.PGHOST}}"',
-            '--set "PGPORT=${{Postgres.PGPORT}}"',
-        ]
-
-        cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name} --skip-deploys"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        # Wagtail projects need an env var pointing to the settings module.
-        if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
-            plugin_utils.write_output("  Setting DJANGO_SETTINGS_MODULE environment variable...")
-
-            # Need form mysite.settings.production
-            dotted_settings_path = ".".join(dsd_config.settings_path.parts[-3:]).removesuffix(".py")
-
-            cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
-            output = plugin_utils.run_quick_command(cmd)
-            plugin_utils.write_output(output)
