@@ -16,12 +16,15 @@ Add a new file to the user's project, using a template:
 import webbrowser
 from pathlib import Path
 
+from django.utils.safestring import mark_safe
+
 from . import deploy_messages as platform_msgs
 from . import railway_utils
 from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
+
 
 
 class PlatformDeployer:
@@ -98,7 +101,7 @@ class PlatformDeployer:
             db_block = db_block.replace("\n", "\n    ")
         
         context = {
-            "database_block": db_block,
+            "database_block": mark_safe(db_block),
         }
 
         plugin_utils.modify_settings_file(template_path, context)
