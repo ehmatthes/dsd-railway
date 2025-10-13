@@ -1,78 +1,102 @@
-"""Helper functions specific to {{PlatformmName}}.
+"""Helper functions specific to dsd-railway e2e tests."""
 
-Some Fly.io functions are included as an example.
-"""
-
-import re, time
+import time
 import json
 import os
 from pprint import pprint
+import webbrowser
 
 import requests
 
+from tests.e2e_tests.utils import it_helper_functions as it_utils
 from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 
-# def create_project():
-#     """Create a project on Fly.io."""
-#     print("\n\nCreating a project on Fly.io...")
-#     output = (
-#         make_sp_call(f"fly apps create --generate-name", capture_output=True)
-#         .stdout.decode()
-#         .strip()
-#     )
-#     print("create_project output:", output)
+def automate_all_steps():
+    """Carry out steps needed to test an --automate-all run."""
+    # Get project ID.
+    cmd = "railway status --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    project_id = output_json["id"]
+    request.config.cache.set("project_id", project_id)
 
-#     re_app_name = r"New app created: (.*)"
-#     app_name = re.search(re_app_name, output).group(1)
-#     print(f"  App name: {app_name}")
-
-#     return app_name
-
-
-# def deploy_project(app_name):
-#     """Make a non-automated deployment."""
-#     # Consider pausing before the deployment. Some platforms need a moment
-#     #   for the newly-created resources to become fully available.
-#     # time.sleep(30)
-
-#     print("Deploying to Fly.io...")
-#     make_sp_call("fly deploy")
-
-#     # Open project and get URL.
-#     output = (
-#         make_sp_call(f"fly apps open -a {app_name}", capture_output=True)
-#         .stdout.decode()
-#         .strip()
-#     )
-#     print("fly open output:", output)
-
-#     re_url = r"opening (http.*) \.\.\."
-#     project_url = re.search(re_url, output).group(1)
-#     if "https" not in project_url:
-#         project_url = project_url.replace("http", "https")
-
-#     print(f"  Project URL: {project_url}")
-
-#     return project_url
+    # Get URL
+    cmd = f"railway variables --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    return f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
 
 
-# def get_project_url_name():
-#     """Get project URL and app name of a deployed project.
-#     This is used when testing the automate_all workflow.
-#     """
-#     output = (
-#         make_sp_call("fly status --json", capture_output=True).stdout.decode().strip()
-#     )
-#     status_json = json.loads(output)
+def config_only_steps():
+    """Carry out steps that users would in the configuration-only workflow."""
+    it_utils.commit_configuration_changes()
 
-#     app_name = status_json["Name"]
-#     project_url = f"https://{app_name}.fly.dev"
+    cmd = f"railway init --name {app_name}"
+    make_sp_call(cmd)
 
-#     print(f"  Found app name: {app_name}")
-#     print(f"  Project URL: {project_url}")
+    # Get project ID.
+    cmd = "railway status --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    project_id = output_json["id"]
+    request.config.cache.set("project_id", project_id)
 
-#     return project_url, app_name
+    # Link project.
+    cmd = f"railway link --project {project_id} --service {app_name}"
+    make_sp_call(cmd)
+
+    cmd = "railway up"
+    make_sp_call(cmd)
+
+    cmd = "railway add --database postgres"
+    make_sp_call(cmd)
+
+    env_vars = [
+        '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+        '--set "PGUSER=${{Postgres.PGUSER}}"',
+        '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+        '--set "PGHOST=${{Postgres.PGHOST}}"',
+        '--set "PGPORT=${{Postgres.PGPORT}}"',
+    ]
+    cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
+    make_sp_call(cmd)
+
+    # Make sure env vars are reading from Postgres values.
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout/pause)):
+        msg = "  Reading env vars..."
+        print(msg)
+        cmd = f"railway variables --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True)
+        output_json = json.loads(output.stdout.decode())
+        if output_json["PGUSER"] == "postgres":
+            break
+        
+        print(output_json)
+        time.sleep(pause)
+
+    cmd = f"railway domain --port 8080 --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True)
+
+    output_json = json.loads(output.stdout.decode())
+    project_url = output_json["domain"]
+
+    # Wait for a 200 response.
+    pause = 10
+    timeout = 300
+    for _ in range(int(timeout/pause)):
+        msg = "  Checking if deployment is ready..."
+        print(msg)
+        r = requests.get(project_url)
+        if r.status_code == 200:
+            break
+
+        time.sleep(pause)
+
+    webbrowser.open(project_url)
+    return project_url
 
 
 def check_log(tmp_proj_dir):

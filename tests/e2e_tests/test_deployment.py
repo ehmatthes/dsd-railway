@@ -1,9 +1,7 @@
-import re, time
+import time
 import json
-import webbrowser
 
 import pytest
-import requests
 
 from tests.e2e_tests.utils import it_helper_functions as it_utils
 from . import utils as platform_utils
@@ -30,9 +28,6 @@ def test_dummy(tmp_project, request):
 def test_deployment(tmp_project, cli_options, request):
     """Test the full, live deployment process to Railway."""
 
-    # Cache the platform name for teardown work.
-    request.config.cache.set("platform", "dsd_railway")
-
     print("\nTesting deployment to Railway using the following options:")
     print(cli_options.__dict__)
 
@@ -48,89 +43,10 @@ def test_deployment(tmp_project, cli_options, request):
     app_name = "blog"
     request.config.cache.set("app_name", app_name)
 
-    # Note: If not using automate_all, take steps here that the end user would take.
-    if not cli_options.automate_all:
-        it_utils.commit_configuration_changes()
-
-        cmd = f"railway init --name {app_name}"
-        make_sp_call(cmd)
-
-        # Get project ID.
-        cmd = "railway status --json"
-        output = make_sp_call(cmd, capture_output=True).stdout.decode()
-        output_json = json.loads(output)
-        project_id = output_json["id"]
-        request.config.cache.set("project_id", project_id)
-
-        # Link project.
-        cmd = f"railway link --project {project_id} --service {app_name}"
-        make_sp_call(cmd)
-
-        cmd = "railway up"
-        make_sp_call(cmd)
-
-        cmd = "railway add --database postgres"
-        make_sp_call(cmd)
-
-        env_vars = [
-            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
-            '--set "PGUSER=${{Postgres.PGUSER}}"',
-            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
-            '--set "PGHOST=${{Postgres.PGHOST}}"',
-            '--set "PGPORT=${{Postgres.PGPORT}}"',
-        ]
-        cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
-        make_sp_call(cmd)
-
-        # Make sure env vars are reading from Postgres values.
-        pause = 10
-        timeout = 60
-        for _ in range(int(timeout/pause)):
-            msg = "  Reading env vars..."
-            print(msg)
-            cmd = f"railway variables --service {app_name} --json"
-            output = make_sp_call(cmd, capture_output=True)
-            output_json = json.loads(output.stdout.decode())
-            if output_json["PGUSER"] == "postgres":
-                break
-            
-            print(output_json)
-            time.sleep(pause)
-
-        cmd = f"railway domain --port 8080 --service {app_name} --json"
-        output = make_sp_call(cmd, capture_output=True)
-
-        output_json = json.loads(output.stdout.decode())
-        project_url = output_json["domain"]
-
-        # Wait for a 200 response.
-        pause = 10
-        timeout = 300
-        for _ in range(int(timeout/pause)):
-            msg = "  Checking if deployment is ready..."
-            print(msg)
-            r = requests.get(project_url)
-            if r.status_code == 200:
-                break
-
-            time.sleep(pause)
-
-        webbrowser.open(project_url)
-    
-    # Get URL and project ID from an automated deployment.
     if cli_options.automate_all:
-        # Get project ID.
-        cmd = "railway status --json"
-        output = make_sp_call(cmd, capture_output=True).stdout.decode()
-        output_json = json.loads(output)
-        project_id = output_json["id"]
-        request.config.cache.set("project_id", project_id)
-
-        # Get URL
-        cmd = f"railway variables --service {app_name} --json"
-        output = make_sp_call(cmd, capture_output=True).stdout.decode()
-        output_json = json.loads(output)
-        project_url = f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
+        project_url = platform_utils.automate_all_steps()
+    else:
+        project_url = platform_utils.config_only_steps()
     
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")
