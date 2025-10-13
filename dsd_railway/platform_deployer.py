@@ -86,22 +86,26 @@ class PlatformDeployer:
         msg = "\nAdding a Railway-specific settings block."
         plugin_utils.write_output(msg)
 
-        # Get DATABASES setting.
-        if plugin_config.db == "postgres":
-            path_db_block = self.templates_path / "db_block_postgres.py"
-            db_block = path_db_block.read_text()
+        # Get DATABASES setting. No need for a conditional block, use --db
+        # arg to get correct template for DATABASES block.
+        path_db_block = self.templates_path / f"db_block_{plugin_config.db}.py"
+        db_block = path_db_block.read_text()
+        if not dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
+            # Non-wagtail projects need an indented settings block.
+            db_block = db_block.replace("\n", "\n    ")
+        # Mark safe, so block is not escaped by template engine.
+        db_block = mark_safe(db_block)
+
+        # DEV: Move the above to a util function.
 
         # Get correct settings template.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             template_path = self.templates_path / "settings_wagtail.py"
         else:
             template_path = self.templates_path / "settings.py"
-
-            # Non-wagtail projects need an indented settings block.
-            db_block = db_block.replace("\n", "\n    ")
         
         context = {
-            "database_block": mark_safe(db_block),
+            "database_block": db_block,
         }
 
         plugin_utils.modify_settings_file(template_path, context)
@@ -136,13 +140,19 @@ class PlatformDeployer:
 
     def _add_requirements(self):
         """Add requirements for deploying to Railway."""
+        # Base requirements, for all Railway projects.
         requirements = [
             "gunicorn",
             "whitenoise",
-            "psycopg",
-            "psycopg-binary",
-            "psycopg-pool",
         ]
+
+        # Add database-specific requirements.
+        if plugin_config.db == "postgres":
+            requirements += ("psycopg", "psycopg-binary", "psycopg-pool",)
+        elif plugin_config.db == "sqlite":
+            requirements += ("dj-lite")
+
+        # Add these to project requirements.
         plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
