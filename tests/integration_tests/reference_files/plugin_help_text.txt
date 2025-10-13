@@ -1,0 +1,5 @@
+Options for dsd-railway:
+  Plugin-specific CLI args for dsd-railway
+
+  --db DB               Specify the database to be used: postgres (default) |
+                        sqlite
