@@ -12,7 +12,7 @@ from tests.e2e_tests.utils import it_helper_functions as it_utils
 from tests.e2e_tests.utils.it_helper_functions import make_sp_call
 
 
-def automate_all_steps(app_name):
+def automate_all_steps(request, app_name):
     """Carry out steps needed to test an --automate-all run."""
     # Get project ID.
     cmd = "railway status --json"
@@ -28,7 +28,7 @@ def automate_all_steps(app_name):
     return f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
 
 
-def config_only_steps(app_name):
+def config_only_steps(request, app_name):
     """Carry out steps that users would in the configuration-only workflow."""
     it_utils.commit_configuration_changes()
 
