@@ -156,14 +156,12 @@ class PlatformDeployer:
         railway_utils.link_project()
         railway_utils.push_project()
         railway_utils.add_database()
-        railway_utils.set_postgres_env_vars()
 
         # Wagtail projects need an env var pointing to the settings module.
         # DEV: This will be `if dsd_config.wagtail_project` shortly.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             railway_utils.set_wagtail_env_vars()
 
-        railway_utils.ensure_pg_env_vars()
         railway_utils.redeploy_project()
         self.deployed_url = railway_utils.generate_domain()
         railway_utils.check_status_200(self.deployed_url)

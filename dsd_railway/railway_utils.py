@@ -99,10 +99,15 @@ def add_postgres_db():
     """Add a Postgres database to the project."""
     msg = "  Adding a Postgres database..."
     plugin_utils.write_output(msg)
-    
+
+    # Add db.
     cmd = "railway add --database postgres"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
+
+    # Set required env vars, and make sure they're readable.
+    set_postgres_env_vars()
+    ensure_pg_env_vars()
 
 
 def set_postgres_env_vars():
