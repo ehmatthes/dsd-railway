@@ -21,10 +21,14 @@ from tests.integration_tests.conftest import (
 pytestmark = pytest.mark.skip_auto_dsd_call
 
 # --- Fixtures ---
+@pytest.fixture(scope="function", autouse=True)
+def run_dsd_sqlite(tmp_project):
+    """Run django-simple-deploy, using `--db sqlite` arg."""
+    cmd = "python manage.py deploy --db sqlite"
+    stdout, stderr = msp.call_deploy(tmp_project, cmd)
 
 
 # --- Test modifications to project files. ---
-
 
 def test_settings(tmp_project):
     """Verify there's a Railway-specific settings section.
@@ -36,11 +40,6 @@ def test_settings(tmp_project):
     modified, and if it's correct, copy that file to reference_files. Tests should pass
     again.
     """
-
-    # DEV: Can this be autouse for the module?
-    cmd = "python manage.py deploy --db sqlite"
-    stdout, stderr = msp.call_deploy(tmp_project, cmd)
-
     hf.check_reference_file(tmp_project, "blog/settings.py", "dsd-railway", reference_filename="settings_sqlite.py")
 
 
@@ -50,10 +49,6 @@ def test_requirements_txt(tmp_project, pkg_manager, tmp_path, dsd_version):
     test's temp dir, look at the requirements.txt file after it was modified, and if
     it's correct, copy it to reference files. Tests should pass again.
     """
-    # DEV: Can this be autouse for the module?
-    cmd = "python manage.py deploy --db sqlite"
-    stdout, stderr = msp.call_deploy(tmp_project, cmd)
-
     if pkg_manager == "req_txt":
         context = {"current-version": dsd_version}
         hf.check_reference_file(
