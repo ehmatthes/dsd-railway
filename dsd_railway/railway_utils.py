@@ -93,6 +93,8 @@ def add_database():
 
     if plugin_config.db == "postgres":
         add_postgres_db()
+    elif plugin_config.db == "sqlite":
+        add_sqlite_db()
 
 
 def add_postgres_db():
@@ -126,6 +128,20 @@ def set_postgres_env_vars():
     cmd = f"railway variables {' '.join(env_vars)} --service {dsd_config.deployed_project_name} --skip-deploys"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
+
+
+def add_sqlite_db():
+    """Add a SQLite database to the project."""
+    msg = "  Adding a SQLite database..."
+    plugin_utils.write_output(msg)
+
+    # Add db.
+    cmd = "railway add volume -m /app/db.sqlite3"
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
+    # Make sure default env vars are readable.
+    ensure_sqlite_env_vars()
 
 
 def set_wagtail_env_vars():
@@ -163,6 +179,27 @@ def ensure_pg_env_vars():
 
         output_json = json.loads(output.stdout.decode())
         if output_json["PGUSER"] == "postgres":
+            break
+
+        time.sleep(pause)
+
+def ensure_sqlite_env_vars():
+    """Make sure the SQLite environment variables are active.
+
+    The volume will not be accessible until these are readable.
+    """
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        plugin_utils.write_output(msg)
+
+        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        output_json = json.loads(output.stdout.decode())
+        if output_json["RAILWAY_VOLUMME_MOUNT_PATH"] == "/app/db.sqlite3":
             break
 
         time.sleep(pause)
