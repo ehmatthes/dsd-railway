@@ -50,6 +50,10 @@ def test_requirements_txt(tmp_project, pkg_manager, tmp_path, dsd_version):
     test's temp dir, look at the requirements.txt file after it was modified, and if
     it's correct, copy it to reference files. Tests should pass again.
     """
+    # DEV: Can this be autouse for the module?
+    cmd = "python manage.py deploy --db sqlite"
+    stdout, stderr = msp.call_deploy(tmp_project, cmd)
+
     if pkg_manager == "req_txt":
         context = {"current-version": dsd_version}
         hf.check_reference_file(
@@ -58,6 +62,7 @@ def test_requirements_txt(tmp_project, pkg_manager, tmp_path, dsd_version):
             "dsd-railway",
             context=context,
             tmp_path=tmp_path,
+            reference_filename="requirements_sqlite.txt",
         )
     elif pkg_manager in ["poetry", "pipenv"]:
         assert not Path("requirements.txt").exists()
