@@ -16,15 +16,13 @@ Add a new file to the user's project, using a template:
 import webbrowser
 from pathlib import Path
 
-from django.utils.safestring import mark_safe
-
 from . import deploy_messages as platform_msgs
+from . import settings_utils
 from . import railway_utils
 from .plugin_config import plugin_config
 
 from django_simple_deploy.management.commands.utils import plugin_utils
 from django_simple_deploy.management.commands.utils.plugin_utils import dsd_config
-
 
 
 class PlatformDeployer:
@@ -86,24 +84,14 @@ class PlatformDeployer:
         msg = "\nAdding a Railway-specific settings block."
         plugin_utils.write_output(msg)
 
-        # Get DATABASES setting. No need for a conditional block, use --db
-        # arg to get correct template for DATABASES block.
-        path_db_block = self.templates_path / f"db_block_{plugin_config.db}.py"
-        db_block = path_db_block.read_text()
-        if not dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
-            # Non-wagtail projects need an indented settings block.
-            db_block = db_block.replace("\n", "\n    ")
-        # Mark safe, so block is not escaped by template engine.
-        db_block = mark_safe(db_block)
-
-        # DEV: Move the above to a util function.
-
         # Get correct settings template.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             template_path = self.templates_path / "settings_wagtail.py"
         else:
             template_path = self.templates_path / "settings.py"
         
+        # Get context.
+        db_block = settings_utils.get_db_block(self.templates_path, plugin_config.db)
         context = {
             "database_block": db_block,
         }
