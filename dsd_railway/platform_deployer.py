@@ -136,9 +136,9 @@ class PlatformDeployer:
 
         # Add database-specific requirements.
         if plugin_config.db == "postgres":
-            requirements += ("psycopg", "psycopg-binary", "psycopg-pool",)
+            requirements += ["psycopg", "psycopg-binary", "psycopg-pool",]
         elif plugin_config.db == "sqlite":
-            requirements += ("dj-lite")
+            requirements += ["dj-lite"]
 
         # Add these to project requirements.
         plugin_utils.add_packages(requirements)

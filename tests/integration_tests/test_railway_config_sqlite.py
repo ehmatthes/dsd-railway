@@ -42,3 +42,22 @@ def test_settings(tmp_project):
     stdout, stderr = msp.call_deploy(tmp_project, cmd)
 
     hf.check_reference_file(tmp_project, "blog/settings.py", "dsd-railway", reference_filename="settings_sqlite.py")
+
+
+def test_requirements_txt(tmp_project, pkg_manager, tmp_path, dsd_version):
+    """Test that the requirements.txt file is correct.
+    Note: This will fail as soon as you add new requirements. That's good! Look in the
+    test's temp dir, look at the requirements.txt file after it was modified, and if
+    it's correct, copy it to reference files. Tests should pass again.
+    """
+    if pkg_manager == "req_txt":
+        context = {"current-version": dsd_version}
+        hf.check_reference_file(
+            tmp_project,
+            "requirements.txt",
+            "dsd-railway",
+            context=context,
+            tmp_path=tmp_path,
+        )
+    elif pkg_manager in ["poetry", "pipenv"]:
+        assert not Path("requirements.txt").exists()
