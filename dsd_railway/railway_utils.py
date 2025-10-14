@@ -91,6 +91,15 @@ def add_database():
     msg = "  Adding a database..."
     plugin_utils.write_output(msg)
 
+    if plugin_config.db == "postgres":
+        add_postgres_db()
+
+
+def add_postgres_db():
+    """Add a Postgres database to the project."""
+    msg = "  Adding a Postgres database..."
+    plugin_utils.write_output(msg)
+    
     cmd = "railway add --database postgres"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
