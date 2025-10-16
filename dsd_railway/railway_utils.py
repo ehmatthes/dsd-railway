@@ -136,7 +136,7 @@ def add_sqlite_db():
     plugin_utils.write_output(msg)
 
     # Add db.
-    cmd = "railway add volume -m /app/db.sqlite3"
+    cmd = f"railway volume add --mount-path /app/data --service {dsd_config.deployed_project_name}"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
 
