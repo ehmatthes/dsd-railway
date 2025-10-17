@@ -135,8 +135,16 @@ def add_sqlite_db():
     msg = "  Adding a SQLite database..."
     plugin_utils.write_output(msg)
 
+    # Set `RAILWAY_RUN_UID` env var.
+    msg = "  Setting `RAILWAY_RUN_UID` env var."
+    plugin_utils.write_output(msg)
+
+    cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service {dsd_config.deployed_project_name} --skip-deploys'
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
     # Add db.
-    cmd = f"railway volume add --mount-path /app/data --service {dsd_config.deployed_project_name}"
+    cmd = f"railway volume add --mount-path /app/data"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
 
@@ -190,6 +198,10 @@ def ensure_sqlite_env_vars():
     """
     pause = 10
     timeout = 60
+
+    msg = "  Waiting for `RAILWAY_VOLUME_MOUNT_PATH..."
+    plugin_utils.write_output(msg)
+
     for _ in range(int(timeout / pause)):
         msg = "  Reading env vars..."
         plugin_utils.write_output(msg)
@@ -200,6 +212,23 @@ def ensure_sqlite_env_vars():
 
         output_json = json.loads(output.stdout.decode())
         if output_json["RAILWAY_VOLUMME_MOUNT_PATH"] == "/app/db.sqlite3":
+            break
+
+        time.sleep(pause)
+
+    msg = "  Waiting for `RAILWAY_RUN_UID` ..."
+    plugin_utils.write_output(msg)
+
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        plugin_utils.write_output(msg)
+
+        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        output_json = json.loads(output.stdout.decode())
+        if output_json["RAILWAY_RUN_UID"] == "0":
             break
 
         time.sleep(pause)
