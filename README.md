@@ -13,6 +13,8 @@ This plugin is in a pre-1.0 development phase. It has limited functionality at t
 Configuration-only deployment
 ---
 
+The following instructions set up a Postgres database. If you want to use SQLite instead, see [these instructions](tmp_docs/config_only_sqlite.md).
+
 - Install the [Railway CLI](https://docs.railway.com/guides/cli)
 - Choose a name for your deployed project, and use it everywhere you see `<project-name>` Run the following commands:
 ```sh
