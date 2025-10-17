@@ -138,6 +138,7 @@ def add_sqlite_db():
     # Set `RAILWAY_RUN_UID` env var.
     msg = "  Setting `RAILWAY_RUN_UID` env var."
     plugin_utils.write_output(msg)
+    breakpoint()
 
     cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service {dsd_config.deployed_project_name} --skip-deploys'
     output = plugin_utils.run_quick_command(cmd)
@@ -211,7 +212,7 @@ def ensure_sqlite_env_vars():
         plugin_utils.write_output(output)
 
         output_json = json.loads(output.stdout.decode())
-        if output_json["RAILWAY_VOLUMME_MOUNT_PATH"] == "/app/db.sqlite3":
+        if output_json["RAILWAY_VOLUME_MOUNT_PATH"] == "/app/db.sqlite3":
             break
 
         time.sleep(pause)
