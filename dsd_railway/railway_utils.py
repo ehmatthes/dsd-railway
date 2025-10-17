@@ -82,7 +82,7 @@ def push_project():
     try:
         plugin_utils.run_slow_command(cmd)
     except subprocess.CalledProcessError:
-        msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
+        msg = "  Expected error, because no database exists yet. Continuing deployment."
         plugin_utils.write_output(msg)
 
 
