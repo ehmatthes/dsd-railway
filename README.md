@@ -55,15 +55,20 @@ $ railway redeploy --service <project-name>
 Fully automated deployment
 ---
 
-- Install the [Railway CLI](https://docs.railway.com/guides/cli)
-- Log in, using `railway login`. You may need to run `railway login --browserless`.
-- Install `dsd-railway`: `pip install dsd-railway`
-- Add `django_simple_deploy` to `INSTALLED_APPS`
-- Run `python manage.py deploy --automate-all`.
+First, install the [Railway CLI](https://docs.railway.com/guides/cli). Then run the following commands:
+
+```sh
+$ railway login # You may need to use `railway login --browserless`
+$ pip install dsd-railway
+# Add django_simple_deploy to INSTALLED_APPS.
+$ python manage.py deploy --automate-all
+```
 
 Your deployed project should appear in a new browser tab.
 
-By default, a Postgres database will be used. If you prefer to use SQLite, use the following command instead:
+### Using SQLite
+
+By default, a Postgres database will be used. If you prefer to use SQLite, include the `--db sqlite` argument when calling `deploy`:
 
 ```sh
 $ python manage.py deploy --automate-all --db sqlite
@@ -83,4 +88,4 @@ $ python developer_resources/destroy_project.py <project-id>
 
 Be careful running this command, as it is an immediately destructive action. If you want to be more cautious, you can delete the project in your Railway dashboard. Railway schedules the project for deletion in the next 48 hours, giving you some possibility of restoring the project if you need to.
 
-If you don't know the ID of your project, you can run `railway status --json`. The ID will the first item in the JSON output.
+If you don't know the ID of your project, you can run `railway status --json`. The ID will the first item in the JSON output. You can also find the project ID in the Settings tab of the overall project; make sure you're looking at the project's Settings tab, not the service's Settings.
