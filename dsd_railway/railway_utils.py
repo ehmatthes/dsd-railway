@@ -109,7 +109,7 @@ def add_postgres_db():
 
     # Set required env vars, and make sure they're readable.
     set_postgres_env_vars()
-    ensure_pg_env_vars()
+    _ensure_env_var(env_var="PGUSER", expected_value="postgres")
 
 
 def set_postgres_env_vars():
@@ -155,8 +155,9 @@ def add_sqlite_db():
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
 
-    # Make sure default env vars are readable.
-    ensure_sqlite_env_vars()
+    # Make sure env vars are readable.
+    _ensure_env_var(env_var="RAILWAY_VOLUME_MOUNT_PATH", expected_value="/app/data")
+    _ensure_env_var(env_var="RAILWAY_RUN_UID", expected_value="0")    
 
 
 def set_wagtail_env_vars():
@@ -173,72 +174,6 @@ def set_wagtail_env_vars():
     cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
-
-
-def ensure_pg_env_vars():
-    """Make sure the Postgres environment variables are active.
-
-    Django settings will be incorrect if the environment variables for the app
-    are not yet referencing the database config. Make sure the references are
-    active before proceeding.
-    """
-    pause = 10
-    timeout = 60
-    for _ in range(int(timeout / pause)):
-        msg = "  Reading env vars..."
-        plugin_utils.write_output(msg)
-
-        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        output_json = json.loads(output.stdout.decode())
-        if output_json["PGUSER"] == "postgres":
-            break
-
-        time.sleep(pause)
-
-def ensure_sqlite_env_vars():
-    """Make sure the SQLite environment variables are active.
-
-    The volume will not be accessible until these are readable.
-    """
-    pause = 10
-    timeout = 60
-
-    msg = "  Waiting for `RAILWAY_VOLUME_MOUNT_PATH..."
-    plugin_utils.write_output(msg)
-
-    for _ in range(int(timeout / pause)):
-        msg = "  Reading env vars..."
-        plugin_utils.write_output(msg)
-
-        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        output_json = json.loads(output.stdout.decode())
-        if output_json["RAILWAY_VOLUME_MOUNT_PATH"] == "/app/data":
-            break
-
-        time.sleep(pause)
-
-    msg = "  Waiting for `RAILWAY_RUN_UID` ..."
-    plugin_utils.write_output(msg)
-
-    for _ in range(int(timeout / pause)):
-        msg = "  Reading env vars..."
-        plugin_utils.write_output(msg)
-
-        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        output_json = json.loads(output.stdout.decode())
-        if output_json["RAILWAY_RUN_UID"] == "0":
-            break
-
-        time.sleep(pause)
 
 
 def redeploy_project():
@@ -275,3 +210,31 @@ def check_status_200(url):
             break
 
         time.sleep(pause)
+
+
+# --- Helper functions ---
+
+def _ensure_env_var(env_var, expected_value):
+    """Ensure that an environment variable returns a specific value.
+    
+    This is meant to run right after setting the variable, to make sure no
+    further action is taken until the variable reads correctly.
+    """
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        plugin_utils.write_output(msg)
+
+        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        output_json = json.loads(output.stdout.decode())
+        if output_json[env_var] == expected_value:
+            return True
+
+        time.sleep(pause)
+
+    # Never read correctly.
+    return False
