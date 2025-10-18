@@ -47,7 +47,7 @@ def automate_all_steps(request, app_name):
     return f"https://{output_json['RAILWAY_PUBLIC_DOMAIN']}"
 
 
-def config_only_steps(request, app_name):
+def config_only_steps(request, app_name, cli_options):
     """Carry out steps that users would in the configuration-only workflow."""
     it_utils.commit_configuration_changes()
 
@@ -65,36 +65,57 @@ def config_only_steps(request, app_name):
     cmd = f"railway link --project {project_id} --service {app_name}"
     make_sp_call(cmd)
 
-    cmd = "railway up"
+    cmd = "railway up --ci"
     make_sp_call(cmd)
 
-    cmd = "railway add --database postgres"
-    make_sp_call(cmd)
+    # Parse cli_options for db value.
+    if "--db sqlite" in cli_options.plugin_args_string:
+        test_db = "sqlite"
+    else:
+        test_db = "postgres"
 
-    env_vars = [
-        '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
-        '--set "PGUSER=${{Postgres.PGUSER}}"',
-        '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
-        '--set "PGHOST=${{Postgres.PGHOST}}"',
-        '--set "PGPORT=${{Postgres.PGPORT}}"',
-    ]
-    cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
-    make_sp_call(cmd)
+    if test_db == "postgres":
+        cmd = "railway add --database postgres"
+        make_sp_call(cmd)
 
-    # Make sure env vars are reading from Postgres values.
-    pause = 10
-    timeout = 60
-    for _ in range(int(timeout / pause)):
-        msg = "  Reading env vars..."
-        print(msg)
-        cmd = f"railway variables --service {app_name} --json"
-        output = make_sp_call(cmd, capture_output=True)
-        output_json = json.loads(output.stdout.decode())
-        if output_json["PGUSER"] == "postgres":
-            break
+        env_vars = [
+            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+            '--set "PGUSER=${{Postgres.PGUSER}}"',
+            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+            '--set "PGHOST=${{Postgres.PGHOST}}"',
+            '--set "PGPORT=${{Postgres.PGPORT}}"',
+        ]
+        cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
+        make_sp_call(cmd)
 
-        print(output_json)
-        time.sleep(pause)
+        # Make sure env vars are reading from Postgres values.
+        pause = 10
+        timeout = 60
+        for _ in range(int(timeout / pause)):
+            msg = "  Reading env vars..."
+            print(msg)
+            cmd = f"railway variables --service {app_name} --json"
+            output = make_sp_call(cmd, capture_output=True)
+            output_json = json.loads(output.stdout.decode())
+            if output_json["PGUSER"] == "postgres":
+                break
+
+            print(output_json)
+            time.sleep(pause)
+    
+    if test_db == "sqlite":
+        cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service blog --skip-deploys'
+        make_sp_call(cmd)
+
+        # Link project right before creating volume..
+        cmd = f"railway link --project {project_id} --service {app_name}"
+        make_sp_call(cmd)
+
+        cmd = "railway volume add --mount-path /app/data"
+        make_sp_call(cmd)
+
+        cmd = "railway redeploy"
+        make_sp_call(cmd)
 
     cmd = f"railway domain --port 8080 --service {app_name} --json"
     output = make_sp_call(cmd, capture_output=True)
