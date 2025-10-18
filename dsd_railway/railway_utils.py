@@ -232,9 +232,10 @@ def _ensure_env_var(env_var, expected_value):
 
         output_json = json.loads(output.stdout.decode())
         if output_json[env_var] == expected_value:
-            return True
+            return
 
         time.sleep(pause)
 
-    # Never read correctly.
-    return False
+    # Environment variable is not reading as expected.
+    msg = f"Environment variable {env_var} does not have the value {expected_value}."
+    raise DSDCommandError(msg)
