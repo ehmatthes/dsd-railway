@@ -65,7 +65,7 @@ def config_only_steps(request, app_name, cli_options):
     cmd = f"railway link --project {project_id} --service {app_name}"
     make_sp_call(cmd)
 
-    cmd = "railway up --ci"
+    cmd = "railway up"
     make_sp_call(cmd)
 
     # Parse cli_options for db value.
@@ -114,7 +114,7 @@ def config_only_steps(request, app_name, cli_options):
         cmd = "railway volume add --mount-path /app/data"
         make_sp_call(cmd)
 
-        cmd = "railway redeploy"
+        cmd = "railway redeploy --yes"
         make_sp_call(cmd)
 
     cmd = f"railway domain --port 8080 --service {app_name} --json"
