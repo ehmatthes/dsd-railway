@@ -3,18 +3,26 @@
 # For conventions, see documentation in core deploy_messages.py
 
 from textwrap import dedent
+import sys
 
 from django.conf import settings
 
 
-confirm_automate_all = """
+# With a wider variety of deployment options supported, confirm_automate_all
+# should probably be dynamic.
+requested_db = "postgres"
+if "--db" in sys.argv:
+    db_index = sys.argv.index("--db")
+    requested_db = sys.argv[db_index+1]
+
+confirm_automate_all = f"""
 The --automate-all flag means django-simple-deploy will:
 - Configure your project for deployment to Railway.
 - Commit all changes to your project that are necessary for deployment.
 - Create a new project on Railway.
 - Link your local project repo to the new remote Railway project.
 - Push your code to Railway.
-- Create a Postgres database.
+- Create a {requested_db} database.
 - Set appropriate environment variables on Railway.
 - Generate a Railway domain for your project.
 - Open your deployed project in a new browser tab.
