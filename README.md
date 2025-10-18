@@ -15,8 +15,8 @@ Configuration-only deployment
 
 The following instructions set up a Postgres database. If you want to use SQLite instead, see [these instructions](tmp_docs/config_only_sqlite.md).
 
-- Install the [Railway CLI](https://docs.railway.com/guides/cli)
-- Choose a name for your deployed project, and use it everywhere you see `<project-name>` Run the following commands:
+First, install the [Railway CLI](https://docs.railway.com/guides/cli). Choose a name for your deployed project, and use it everywhere you see `<project-name>`. Run the following commands to configure your project for deployment:
+
 ```sh
 $ railway login # May need to use `railway login --browserless`
 $ pip install dsd-railway
@@ -28,7 +28,8 @@ $ git add .
 $ git commit -m "Configured for deployment to Railway."
 ```
 
-- Run the following. (You'll see a bunch of errors after `railway up`. Those errors will go away after creating the database. This is Railway's [recommended approach](https://docs.railway.com/guides/django#deploy-from-the-cli)!)
+- Now run the following to actually deploy your project to Railway. (You may see a bunch of errors, or a crashed deployment, after running `railway up`. Those errors will go away after creating the database. This is Railway's [recommended approach](https://docs.railway.com/guides/django#deploy-from-the-cli)!)
+
 ```sh
 $ railway init --name <project-name>
 $ railway up
@@ -45,7 +46,7 @@ $ railway domain --port 8080 --service <project-name>
 
 After this last command, you should see the URL for your project. You may need to wait a few minutes for the deployment to finish.
 
-If your deployment does not seem to work, you can try redeploying it:
+If your deployment doesn't seem to work, you can try redeploying it:
 
 ```sh
 $ railway redeploy --service <project-name>
@@ -61,6 +62,14 @@ Fully automated deployment
 - Run `python manage.py deploy --automate-all`.
 
 Your deployed project should appear in a new browser tab.
+
+By default, a Postgres database will be used. If you prefer to use SQLite, use the following command instead:
+
+```sh
+$ python manage.py deploy --automate-all --db sqlite
+```
+
+This will create a persistent [Railway volume](https://docs.railway.com/reference/volumes) where the SQLite database file will be written.
 
 Destroying a project
 ---
