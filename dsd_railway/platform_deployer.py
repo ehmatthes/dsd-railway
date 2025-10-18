@@ -178,5 +178,5 @@ class PlatformDeployer:
                 self.deployed_url, plugin_config.project_id
             )
         else:
-            msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
+            msg = platform_msgs.success_msg(plugin_config, log_output=dsd_config.log_output)
         plugin_utils.write_output(msg)
