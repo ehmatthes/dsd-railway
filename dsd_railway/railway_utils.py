@@ -232,6 +232,9 @@ def _ensure_env_var(env_var, expected_value):
 
         output_json = json.loads(output.stdout.decode())
         if output_json[env_var] == expected_value:
+            msg = f"  {env_var}: {expected_value}"
+            plugin_utils.write_output(msg)
+            
             return
 
         time.sleep(pause)
