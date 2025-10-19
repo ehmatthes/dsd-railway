@@ -95,12 +95,15 @@ def check_log(tmp_proj_dir):
     log_str = log_files[0].read_text()
     if "DATABASE_URL" in log_str:
         return False
-
     return True
 
 
 def destroy_project(request):
-    """Destroy the deployed project, and all remote resources."""
+    """Destroy the deployed project, and all remote resources.
+    
+    This is called by django-simple-deploy's e2e test, after the test
+    is finished running.
+    """
     print("\nCleaning up:")
 
     # Get cached proejct ID and app_name.
@@ -108,49 +111,17 @@ def destroy_project(request):
     project_id = request.config.cache.get("project_id", None)
     if not project_id:
         print("  No project id found; can't destroy any remote resources.")
-        return None
+        return
 
     app_name = request.config.cache.get("app_name", None)
     if not app_name:
         print("  No app_name available; can't destroy any remote resources.")
-        return None
-
-    # Get project ID from env vars, and make sure it matches cached value.
-    print("  Checking that project IDs match...")
-    cmd = f"railway variables --service {app_name} --json"
-    output = make_sp_call(cmd, capture_output=True)
-    output_json = json.loads(output.stdout.decode())
-    project_id_env_var = output_json["RAILWAY_PROJECT_ID"]
-
-    if project_id_env_var == project_id:
-        print("    Project IDs match.")
-    else:
-        msg = f"  Cached project ID:       {project_id}"
-        msg += f"\n  Project ID from env var: {project_id_env_var}"
-        msg += "\n  Project IDs don't match. Not destroying any remote resources."
-        print(msg)
-
-        return None
-
-    print("  Destroying Railway project...")
-    railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
-    if not railway_token:
-        print("Please set the RAILWAY_API_TOKEN environment variable.")
         return
 
-    base_url = "https://backboard.railway.com/graphql/v2"
-    headers = {
-        "Authorization": f"Bearer {railway_token}",
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'
-    }
-
-    r = requests.post(base_url, headers=headers, json=payload, timeout=30)
-    data = r.json()
-    pprint(data)
+    # Get project ID from env vars, and make sure it matches cached value.
+    verified_id = _verify_cached_project_id(app_name, project_id)
+    if verified_id:
+        _destroy_railway_project(project_id)    
 
 
 # --- Helper functions ---
@@ -236,3 +207,43 @@ def _ensure_200_response(project_url):
             break
 
         time.sleep(pause)
+
+def _destroy_railway_project(project_id):
+    """Carry out the actual deletion."""
+    print("  Destroying Railway project...")
+    railway_token = os.environ.get("RAILWAY_API_TOKEN", None)
+    if not railway_token:
+        print("Please set the RAILWAY_API_TOKEN environment variable.")
+        return
+
+    base_url = "https://backboard.railway.com/graphql/v2"
+    headers = {
+        "Authorization": f"Bearer {railway_token}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "query": f'mutation projectDelete {{ projectDelete(id: "{project_id}")}}'
+    }
+
+    r = requests.post(base_url, headers=headers, json=payload, timeout=30)
+    data = r.json()
+    pprint(data)
+
+def _verify_cached_project_id():
+    """Get project ID from env vars, and make sure it matches cached value."""
+    print("  Checking that project IDs match...")
+    cmd = f"railway variables --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True)
+    output_json = json.loads(output.stdout.decode())
+    project_id_env_var = output_json["RAILWAY_PROJECT_ID"]
+
+    if project_id_env_var == project_id:
+        print("    Project IDs match.")
+        return True
+    else:
+        msg = f"  Cached project ID:       {project_id}"
+        msg += f"\n  Project ID from env var: {project_id_env_var}"
+        msg += "\n  Project IDs don't match. Not destroying any remote resources."
+        print(msg)
+        return False
