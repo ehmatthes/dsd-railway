@@ -51,35 +51,31 @@ def config_only_steps(request, app_name, cli_options):
     """Carry out steps that users would in the configuration-only workflow."""
     it_utils.commit_configuration_changes()
 
+    # Create an empty remote project.
     cmd = f"railway init --name {app_name}"
     make_sp_call(cmd)
-
     project_id = _get_project_id(request)
 
-    # Link project.
+    # Link remote project and service to local repo.
     cmd = f"railway link --project {project_id} --service {app_name}"
     make_sp_call(cmd)
 
+    # Push project to Railway.
     cmd = "railway up"
     make_sp_call(cmd)
 
+    # Build and configure remote database.
     db_arg = _get_db_arg(cli_options)
     if db_arg == "postgres":
         _configure_postgres(app_name)
     elif db_arg == "sqlite":
         _configure_sqlite(project_id, app_name)
 
-    cmd = f"railway domain --port 8080 --service {app_name} --json"
-    output = make_sp_call(cmd, capture_output=True)
-
-    output_json = json.loads(output.stdout.decode())
-    project_url = output_json["domain"]
-
+    # Get deployed URL, and open project in browser.
+    project_url = _get_deployed_url(app_name)
     _ensure_200_response(project_url)
-
-    
-
     webbrowser.open(project_url)
+
     return project_url
 
 
@@ -219,6 +215,14 @@ def _configure_sqlite(project_id, app_name):
 
     cmd = "railway redeploy --yes"
     make_sp_call(cmd)
+
+def _get_deployed_url(app_name):
+    """Get the URL of the deployed project."""
+    cmd = f"railway domain --port 8080 --service {app_name} --json"
+    output = make_sp_call(cmd, capture_output=True)
+
+    output_json = json.loads(output.stdout.decode())
+    return output_json["domain"]
 
 def _ensure_200_response(project_url):
     """Wait for a 200 response from the deployed project."""
