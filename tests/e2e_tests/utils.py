@@ -54,12 +54,7 @@ def config_only_steps(request, app_name, cli_options):
     cmd = f"railway init --name {app_name}"
     make_sp_call(cmd)
 
-    # Get project ID.
-    cmd = "railway status --json"
-    output = make_sp_call(cmd, capture_output=True).stdout.decode()
-    output_json = json.loads(output)
-    project_id = output_json["id"]
-    request.config.cache.set("project_id", project_id)
+    project_id = _get_project_id(request)
 
     # Link project.
     cmd = f"railway link --project {project_id} --service {app_name}"
@@ -68,13 +63,11 @@ def config_only_steps(request, app_name, cli_options):
     cmd = "railway up"
     make_sp_call(cmd)
 
-    # Parse cli_options for db value.
-    if "--db sqlite" in cli_options.plugin_args_string:
-        test_db = "sqlite"
-    else:
-        test_db = "postgres"
+    db_arg = _get_db_arg(cli_options)
 
-    if test_db == "postgres":
+    
+
+    if db_arg == "postgres":
         cmd = "railway add --database postgres"
         make_sp_call(cmd)
 
@@ -103,7 +96,7 @@ def config_only_steps(request, app_name, cli_options):
             print(output_json)
             time.sleep(pause)
     
-    if test_db == "sqlite":
+    if db_arg == "sqlite":
         cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service blog --skip-deploys'
         make_sp_call(cmd)
 
@@ -211,3 +204,22 @@ def destroy_project(request):
     r = requests.post(base_url, headers=headers, json=payload, timeout=30)
     data = r.json()
     pprint(data)
+
+
+# --- Helper functions ---
+
+def _get_project_id(request):
+    """Get ID of the project that was just created."""
+    cmd = "railway status --json"
+    output = make_sp_call(cmd, capture_output=True).stdout.decode()
+    output_json = json.loads(output)
+    project_id = output_json["id"]
+    request.config.cache.set("project_id", project_id)
+
+    return project_id
+
+def _get_db_arg(cli_options):
+    """Parse cli options for --db value."""
+    if "--db sqlite" in cli_options.plugin_args_string:
+        return "sqlite"
+    return "postgres"
