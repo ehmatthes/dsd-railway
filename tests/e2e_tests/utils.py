@@ -107,20 +107,16 @@ def destroy_project(request):
     print("\nCleaning up:")
 
     # Get cached proejct ID and app_name.
-    # DEV: These blocks can be cleaned up with the walrus operator.
-    project_id = request.config.cache.get("project_id", None)
-    if not project_id:
+    if not (project_id := request.config.cache.get("project_id", None)):
         print("  No project id found; can't destroy any remote resources.")
         return
 
-    app_name = request.config.cache.get("app_name", None)
-    if not app_name:
+    if not (app_name := request.config.cache.get("app_name", None)):
         print("  No app_name available; can't destroy any remote resources.")
         return
 
     # Get project ID from env vars, and make sure it matches cached value.
-    verified_id = _verify_cached_project_id(app_name, project_id)
-    if verified_id:
+    if _verify_cached_project_id(app_name, project_id):
         _destroy_railway_project(project_id)    
 
 
