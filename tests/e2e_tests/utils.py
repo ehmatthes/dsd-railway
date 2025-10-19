@@ -226,7 +226,7 @@ def _destroy_railway_project(project_id):
     data = r.json()
     pprint(data)
 
-def _verify_cached_project_id():
+def _verify_cached_project_id(app_name, project_id):
     """Get project ID from env vars, and make sure it matches cached value."""
     print("  Checking that project IDs match...")
     cmd = f"railway variables --service {app_name} --json"
@@ -237,9 +237,9 @@ def _verify_cached_project_id():
     if project_id_env_var == project_id:
         print("    Project IDs match.")
         return True
-    else:
-        msg = f"  Cached project ID:       {project_id}"
-        msg += f"\n  Project ID from env var: {project_id_env_var}"
-        msg += "\n  Project IDs don't match. Not destroying any remote resources."
-        print(msg)
-        return False
+
+    msg = f"  Cached project ID:       {project_id}"
+    msg += f"\n  Project ID from env var: {project_id_env_var}"
+    msg += "\n  Project IDs don't match. Not destroying any remote resources."
+    print(msg)
+    return False
