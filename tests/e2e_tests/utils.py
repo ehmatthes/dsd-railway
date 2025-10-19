@@ -64,51 +64,10 @@ def config_only_steps(request, app_name, cli_options):
     make_sp_call(cmd)
 
     db_arg = _get_db_arg(cli_options)
-
-    
-
     if db_arg == "postgres":
-        cmd = "railway add --database postgres"
-        make_sp_call(cmd)
-
-        env_vars = [
-            '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
-            '--set "PGUSER=${{Postgres.PGUSER}}"',
-            '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
-            '--set "PGHOST=${{Postgres.PGHOST}}"',
-            '--set "PGPORT=${{Postgres.PGPORT}}"',
-        ]
-        cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
-        make_sp_call(cmd)
-
-        # Make sure env vars are reading from Postgres values.
-        pause = 10
-        timeout = 60
-        for _ in range(int(timeout / pause)):
-            msg = "  Reading env vars..."
-            print(msg)
-            cmd = f"railway variables --service {app_name} --json"
-            output = make_sp_call(cmd, capture_output=True)
-            output_json = json.loads(output.stdout.decode())
-            if output_json["PGUSER"] == "postgres":
-                break
-
-            print(output_json)
-            time.sleep(pause)
-    
-    if db_arg == "sqlite":
-        cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service blog --skip-deploys'
-        make_sp_call(cmd)
-
-        # Link project right before creating volume..
-        cmd = f"railway link --project {project_id} --service {app_name}"
-        make_sp_call(cmd)
-
-        cmd = "railway volume add --mount-path /app/data"
-        make_sp_call(cmd)
-
-        cmd = "railway redeploy --yes"
-        make_sp_call(cmd)
+        _configure_postgres(app_name)
+    elif db_arg == "sqlite":
+        _configure_sqlite(project_id, app_name)
 
     cmd = f"railway domain --port 8080 --service {app_name} --json"
     output = make_sp_call(cmd, capture_output=True)
@@ -223,3 +182,48 @@ def _get_db_arg(cli_options):
     if "--db sqlite" in cli_options.plugin_args_string:
         return "sqlite"
     return "postgres"
+
+def _configure_postgres(app_name):
+    """Create and configure the remote Postgres database."""
+    cmd = "railway add --database postgres"
+    make_sp_call(cmd)
+
+    env_vars = [
+        '--set "PGDATABASE=${{Postgres.PGDATABASE}}"',
+        '--set "PGUSER=${{Postgres.PGUSER}}"',
+        '--set "PGPASSWORD=${{Postgres.PGPASSWORD}}"',
+        '--set "PGHOST=${{Postgres.PGHOST}}"',
+        '--set "PGPORT=${{Postgres.PGPORT}}"',
+    ]
+    cmd = f"railway variables {' '.join(env_vars)} --service {app_name}"
+    make_sp_call(cmd)
+
+    # Make sure env vars are reading from Postgres values.
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        print(msg)
+        cmd = f"railway variables --service {app_name} --json"
+        output = make_sp_call(cmd, capture_output=True)
+        output_json = json.loads(output.stdout.decode())
+        if output_json["PGUSER"] == "postgres":
+            break
+
+        print(output_json)
+        time.sleep(pause)
+
+def _configure_sqlite(project_id, app_name):
+    """Create and configure remote SQLite database."""
+    cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service blog --skip-deploys'
+    make_sp_call(cmd)
+
+    # Link project right before creating volume..
+    cmd = f"railway link --project {project_id} --service {app_name}"
+    make_sp_call(cmd)
+
+    cmd = "railway volume add --mount-path /app/data"
+    make_sp_call(cmd)
+
+    cmd = "railway redeploy --yes"
+    make_sp_call(cmd)
