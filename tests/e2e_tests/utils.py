@@ -75,17 +75,9 @@ def config_only_steps(request, app_name, cli_options):
     output_json = json.loads(output.stdout.decode())
     project_url = output_json["domain"]
 
-    # Wait for a 200 response.
-    pause = 10
-    timeout = 300
-    for _ in range(int(timeout / pause)):
-        msg = "  Checking if deployment is ready..."
-        print(msg)
-        r = requests.get(project_url)
-        if r.status_code == 200:
-            break
+    _ensure_200_response(project_url)
 
-        time.sleep(pause)
+    
 
     webbrowser.open(project_url)
     return project_url
@@ -227,3 +219,16 @@ def _configure_sqlite(project_id, app_name):
 
     cmd = "railway redeploy --yes"
     make_sp_call(cmd)
+
+def _ensure_200_response(project_url):
+    """Wait for a 200 response from the deployed project."""
+    pause = 10
+    timeout = 300
+    for _ in range(int(timeout / pause)):
+        msg = "  Checking if deployment is ready..."
+        print(msg)
+        r = requests.get(project_url)
+        if r.status_code == 200:
+            break
+
+        time.sleep(pause)
