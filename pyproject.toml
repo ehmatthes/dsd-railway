@@ -61,4 +61,4 @@ packages = [
 include-package-data = true
 
 [tool.black]
-extend-exclude = "dsd_railway/templates/db_block_postgres.py | dsd_railway/templates/db_block_sqlite.py"
+extend-exclude = "dsd_railway/templates/db_block_postgres.py|dsd_railway/templates/db_block_sqlite.py"
