@@ -32,12 +32,13 @@ You may need to run the alternate command:
 # These need to be generated in functions, to display information that's determined as
 # the script runs.
 
+
 def confirm_automate_all():
     """Build the message for confirming a fully automated deployment."""
     requested_db = "postgres"
     if "--db" in sys.argv:
         db_index = sys.argv.index("--db")
-        requested_db = sys.argv[db_index+1]
+        requested_db = sys.argv[db_index + 1]
 
     return dedent(
         f"""
@@ -54,6 +55,7 @@ def confirm_automate_all():
         - Open your deployed project in a new browser tab.
         """
     )
+
 
 def success_msg(plugin_config, log_output=""):
     """Success message, for configuration-only run.
@@ -99,6 +101,7 @@ def success_msg_automate_all(deployed_url, project_id):
 
 # --- Helper functions ---
 
+
 def _get_pg_success_msg():
     """Get config-only success message when using Postres."""
     return dedent(
@@ -131,6 +134,7 @@ def _get_pg_success_msg():
             - Run `railway up` again to push your changes.
     """
     )
+
 
 def _get_sqlite_success_msg():
     """Get config-only success message when using SQLite."""

@@ -100,7 +100,7 @@ def check_log(tmp_proj_dir):
 
 def destroy_project(request):
     """Destroy the deployed project, and all remote resources.
-    
+
     This is called by django-simple-deploy's e2e test, after the test
     is finished running.
     """
@@ -117,10 +117,11 @@ def destroy_project(request):
 
     # Get project ID from env vars, and make sure it matches cached value.
     if _verify_cached_project_id(app_name, project_id):
-        _destroy_railway_project(project_id)    
+        _destroy_railway_project(project_id)
 
 
 # --- Helper functions ---
+
 
 def _get_project_id(request):
     """Get ID of the project that was just created."""
@@ -132,11 +133,13 @@ def _get_project_id(request):
 
     return project_id
 
+
 def _get_db_arg(cli_options):
     """Parse cli options for --db value."""
     if "--db sqlite" in cli_options.plugin_args_string:
         return "sqlite"
     return "postgres"
+
 
 def _configure_postgres(app_name):
     """Create and configure the remote Postgres database."""
@@ -168,6 +171,7 @@ def _configure_postgres(app_name):
         print(output_json)
         time.sleep(pause)
 
+
 def _configure_sqlite(project_id, app_name):
     """Create and configure remote SQLite database."""
     cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service blog --skip-deploys'
@@ -183,6 +187,7 @@ def _configure_sqlite(project_id, app_name):
     cmd = "railway redeploy --yes"
     make_sp_call(cmd)
 
+
 def _get_deployed_url(app_name):
     """Get the URL of the deployed project."""
     cmd = f"railway domain --port 8080 --service {app_name} --json"
@@ -190,6 +195,7 @@ def _get_deployed_url(app_name):
 
     output_json = json.loads(output.stdout.decode())
     return output_json["domain"]
+
 
 def _ensure_200_response(project_url):
     """Wait for a 200 response from the deployed project."""
@@ -203,6 +209,7 @@ def _ensure_200_response(project_url):
             break
 
         time.sleep(pause)
+
 
 def _destroy_railway_project(project_id):
     """Carry out the actual deletion."""
@@ -225,6 +232,7 @@ def _destroy_railway_project(project_id):
     r = requests.post(base_url, headers=headers, json=payload, timeout=30)
     data = r.json()
     pprint(data)
+
 
 def _verify_cached_project_id(app_name, project_id):
     """Get project ID from env vars, and make sure it matches cached value."""

@@ -5,7 +5,7 @@ import os
 
 DEBUG = False
 
-{{ database_block }}
+{{database_block}}
 
 # Static files config.
 STATIC_URL = "static/"

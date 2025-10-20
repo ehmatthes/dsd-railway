@@ -17,5 +17,7 @@ def test_invalid_db_arg(tmp_project, request):
     cmd = "python manage.py deploy --db mysql"
     stdout, stderr = msp.call_deploy(tmp_project, cmd)
 
-    expected_msg = "DSDCommandError: The value for --db must be either `postgres` or `sqlite`."
+    expected_msg = (
+        "DSDCommandError: The value for --db must be either `postgres` or `sqlite`."
+    )
     assert expected_msg in stderr

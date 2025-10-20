@@ -6,7 +6,7 @@ import os
 if os.environ.get("RAILWAY_PROJECT_NAME", ""):
     DEBUG = False
 
-    {{ database_block }}
+    {{database_block}}
 
     # Static files config.
     STATIC_URL = "static/"

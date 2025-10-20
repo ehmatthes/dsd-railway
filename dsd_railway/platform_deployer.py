@@ -89,7 +89,7 @@ class PlatformDeployer:
             template_path = self.templates_path / "settings_wagtail.py"
         else:
             template_path = self.templates_path / "settings.py"
-        
+
         # Get context.
         db_block = settings_utils.get_db_block(self.templates_path, plugin_config.db)
         context = {
@@ -136,7 +136,11 @@ class PlatformDeployer:
 
         # Add database-specific requirements.
         if plugin_config.db == "postgres":
-            requirements += ["psycopg", "psycopg-binary", "psycopg-pool",]
+            requirements += [
+                "psycopg",
+                "psycopg-binary",
+                "psycopg-pool",
+            ]
         elif plugin_config.db == "sqlite":
             requirements += ["dj-lite"]
 
@@ -178,5 +182,7 @@ class PlatformDeployer:
                 self.deployed_url, plugin_config.project_id
             )
         else:
-            msg = platform_msgs.success_msg(plugin_config, log_output=dsd_config.log_output)
+            msg = platform_msgs.success_msg(
+                plugin_config, log_output=dsd_config.log_output
+            )
         plugin_utils.write_output(msg)

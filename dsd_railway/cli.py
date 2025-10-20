@@ -38,11 +38,12 @@ def validate_cli(options):
 
 # --- Helper functions ---
 
+
 def _validate_db(db):
     """Validate the db arg that was passed."""
     if db not in ("postgres", "sqlite"):
         msg = "The value for --db must be either `postgres` or `sqlite`."
         raise DSDCommandError(msg)
-    
+
     # Valid argument.
     plugin_config.db = db

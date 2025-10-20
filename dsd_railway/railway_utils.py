@@ -157,7 +157,7 @@ def add_sqlite_db():
 
     # Make sure env vars are readable.
     _ensure_env_var(env_var="RAILWAY_VOLUME_MOUNT_PATH", expected_value="/app/data")
-    _ensure_env_var(env_var="RAILWAY_RUN_UID", expected_value="0")    
+    _ensure_env_var(env_var="RAILWAY_RUN_UID", expected_value="0")
 
 
 def set_wagtail_env_vars():
@@ -214,9 +214,10 @@ def check_status_200(url):
 
 # --- Helper functions ---
 
+
 def _ensure_env_var(env_var, expected_value):
     """Ensure that an environment variable returns a specific value.
-    
+
     This is meant to run right after setting the variable, to make sure no
     further action is taken until the variable reads correctly.
     """
@@ -234,7 +235,7 @@ def _ensure_env_var(env_var, expected_value):
         if output_json[env_var] == expected_value:
             msg = f"  {env_var}: {expected_value}"
             plugin_utils.write_output(msg)
-            
+
             return
 
         time.sleep(pause)
