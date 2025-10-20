@@ -7,7 +7,7 @@ from django_simple_deploy.management.commands.utils.plugin_utils import dsd_conf
 
 def get_db_block(templates_path, db):
     """Get DATABASES settings block.
-    
+
     Uses mark_safe(), so block is not escaped by template engine.
     """
     # No need for a conditional block, use --db arg to get correct template
