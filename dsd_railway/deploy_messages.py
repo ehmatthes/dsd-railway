@@ -52,7 +52,6 @@ You may need to run the alternate command:
 # These need to be generated in functions, to display information that's determined as
 # the script runs.
 
-
 def success_msg(plugin_config, log_output=""):
     """Success message, for configuration-only run.
 
@@ -60,64 +59,9 @@ def success_msg(plugin_config, log_output=""):
       manual test run.
     """
     if plugin_config.db == "postgres":
-        msg = dedent(
-            f"""
-            --- Your project is now configured for deployment on Railway ---
-
-            To deploy your project, you will need to:
-            - Commit the changes made in the configuration process.
-                $ git status
-                $ git add .
-                $ git commit -am "Configured project for deployment."
-            - Push your project to Railway's servers:
-                # Choose a name for your Railway project.
-                $ railway init --name <project-name>
-                $ railway up
-                $ railway add --database postgres
-                $ railway variables \
-                    --set 'PGDATABASE=${{Postgres.PGDATABASE}}' \
-                    --set 'PGUSER=${{Postgres.PGUSER}}' \
-                    --set 'PGPASSWORD=${{Postgres.PGPASSWORD}}' \
-                    --set 'PGHOST=${{Postgres.PGHOST}}' \
-                    --set 'PGPORT=${{Postgres.PGPORT}}' \
-                    --service <project-name>
-                $ railway domain --port 8080 --service <project-name>
-            - After running `railway domain`, you should see the deployed URL for 
-              your project.
-            - As you develop your project further:
-                - Make local changes
-                - Commit your local changes
-                - Run `railway up` again to push your changes.
-        """
-        )
+        msg = _get_pg_success_msg()
     elif plugin_config.db == "sqlite":
-        msg = dedent(
-            f"""
-            --- Your project is now configured for deployment on Railway ---
-
-            To deploy your project, you will need to:
-            - Commit the changes made in the configuration process.
-                $ git status
-                $ git add .
-                $ git commit -am "Configured project for deployment."
-            - Push your project to Railway's servers:
-                # Choose a name for your Railway project.
-                # Get your project ID from the output of `railway init`, or from your dashboard.
-                $ railway init --name <project-name>
-                $ railway up --ci
-                $ railway variables --set "RAILWAY_RUN_UID=0" --service <project-name> --skip-deploys
-                $ railway link --project <project-id> --service <project-name>
-                $ railway volume add --mount-path /app/data
-                $ railway redeploy
-                $ railway domain --port 8080 --service <project-name>
-            - After running `railway domain`, you should see the deployed URL for 
-              your project.
-            - As you develop your project further:
-                - Make local changes
-                - Commit your local changes
-                - Run `railway up` again to push your changes.
-        """
-        )
+        msg = _get_sqlite_success_msg()
 
     if log_output:
         msg += dedent(
@@ -148,3 +92,69 @@ def success_msg_automate_all(deployed_url, project_id):
     """
     )
     return msg
+
+
+# --- Helper functions ---
+
+def _get_pg_success_msg():
+    """Get config-only success message when using Postres."""
+    return dedent(
+        f"""
+        --- Your project is now configured for deployment on Railway ---
+
+        To deploy your project, you will need to:
+        - Commit the changes made in the configuration process.
+            $ git status
+            $ git add .
+            $ git commit -am "Configured project for deployment."
+        - Push your project to Railway's servers:
+            # Choose a name for your Railway project.
+            $ railway init --name <project-name>
+            $ railway up
+            $ railway add --database postgres
+            $ railway variables \
+                --set 'PGDATABASE=${{Postgres.PGDATABASE}}' \
+                --set 'PGUSER=${{Postgres.PGUSER}}' \
+                --set 'PGPASSWORD=${{Postgres.PGPASSWORD}}' \
+                --set 'PGHOST=${{Postgres.PGHOST}}' \
+                --set 'PGPORT=${{Postgres.PGPORT}}' \
+                --service <project-name>
+            $ railway domain --port 8080 --service <project-name>
+        - After running `railway domain`, you should see the deployed URL for 
+          your project.
+        - As you develop your project further:
+            - Make local changes
+            - Commit your local changes
+            - Run `railway up` again to push your changes.
+    """
+    )
+
+def _get_sqlite_success_msg():
+    """Get config-only success message when using SQLite."""
+    return dedent(
+        f"""
+        --- Your project is now configured for deployment on Railway ---
+
+        To deploy your project, you will need to:
+        - Commit the changes made in the configuration process.
+            $ git status
+            $ git add .
+            $ git commit -am "Configured project for deployment."
+        - Push your project to Railway's servers:
+            # Choose a name for your Railway project.
+            # Get your project ID from the output of `railway init`, or from your dashboard.
+            $ railway init --name <project-name>
+            $ railway up --ci
+            $ railway variables --set "RAILWAY_RUN_UID=0" --service <project-name> --skip-deploys
+            $ railway link --project <project-id> --service <project-name>
+            $ railway volume add --mount-path /app/data
+            $ railway redeploy
+            $ railway domain --port 8080 --service <project-name>
+        - After running `railway domain`, you should see the deployed URL for 
+          your project.
+        - As you develop your project further:
+            - Make local changes
+            - Commit your local changes
+            - Run `railway up` again to push your changes.
+    """
+    )
