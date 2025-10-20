@@ -8,26 +8,6 @@ import sys
 from django.conf import settings
 
 
-# With a wider variety of deployment options supported, confirm_automate_all
-# should probably be dynamic.
-requested_db = "postgres"
-if "--db" in sys.argv:
-    db_index = sys.argv.index("--db")
-    requested_db = sys.argv[db_index+1]
-
-confirm_automate_all = f"""
-The --automate-all flag means django-simple-deploy will:
-- Configure your project for deployment to Railway.
-- Commit all changes to your project that are necessary for deployment.
-- Create a new project on Railway.
-- Link your local project repo to the new remote Railway project.
-- Push your code to Railway.
-- Create a {requested_db} database.
-- Set appropriate environment variables on Railway.
-- Generate a Railway domain for your project.
-- Open your deployed project in a new browser tab.
-"""
-
 cancel_railway = """
 Okay, cancelling Railway configuration and deployment.
 """
@@ -51,6 +31,29 @@ You may need to run the alternate command:
 # --- Dynamic strings ---
 # These need to be generated in functions, to display information that's determined as
 # the script runs.
+
+def confirm_automate_all():
+    """Build the message for confirming a fully automated deployment."""
+    requested_db = "postgres"
+    if "--db" in sys.argv:
+        db_index = sys.argv.index("--db")
+        requested_db = sys.argv[db_index+1]
+
+    return dedent(
+        f"""
+
+        The --automate-all flag means django-simple-deploy will:
+        - Configure your project for deployment to Railway.
+        - Commit all changes to your project that are necessary for deployment.
+        - Create a new project on Railway.
+        - Link your local project repo to the new remote Railway project.
+        - Push your code to Railway.
+        - Create a {requested_db} database.
+        - Set appropriate environment variables on Railway.
+        - Generate a Railway domain for your project.
+        - Open your deployed project in a new browser tab.
+        """
+    )
 
 def success_msg(plugin_config, log_output=""):
     """Success message, for configuration-only run.
