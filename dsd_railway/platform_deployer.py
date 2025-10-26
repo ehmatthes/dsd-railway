@@ -17,6 +17,7 @@ import webbrowser
 from pathlib import Path
 
 from . import deploy_messages as platform_msgs
+from . import settings_utils
 from . import railway_utils
 from .plugin_config import plugin_config
 
@@ -83,12 +84,19 @@ class PlatformDeployer:
         msg = "\nAdding a Railway-specific settings block."
         plugin_utils.write_output(msg)
 
+        # Get correct settings template.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             template_path = self.templates_path / "settings_wagtail.py"
         else:
             template_path = self.templates_path / "settings.py"
 
-        plugin_utils.modify_settings_file(template_path)
+        # Get context.
+        db_block = settings_utils.get_db_block(self.templates_path, plugin_config.db)
+        context = {
+            "database_block": db_block,
+        }
+
+        plugin_utils.modify_settings_file(template_path, context)
 
     def _add_railway_toml(self):
         """Add a railway.toml file."""
@@ -120,13 +128,23 @@ class PlatformDeployer:
 
     def _add_requirements(self):
         """Add requirements for deploying to Railway."""
+        # Base requirements, for all Railway projects.
         requirements = [
             "gunicorn",
             "whitenoise",
-            "psycopg",
-            "psycopg-binary",
-            "psycopg-pool",
         ]
+
+        # Add database-specific requirements.
+        if plugin_config.db == "postgres":
+            requirements += [
+                "psycopg",
+                "psycopg-binary",
+                "psycopg-pool",
+            ]
+        elif plugin_config.db == "sqlite":
+            requirements += ["dj-lite"]
+
+        # Add these to project requirements.
         plugin_utils.add_packages(requirements)
 
     def _conclude_automate_all(self):
@@ -142,14 +160,12 @@ class PlatformDeployer:
         railway_utils.link_project()
         railway_utils.push_project()
         railway_utils.add_database()
-        railway_utils.set_postgres_env_vars()
 
         # Wagtail projects need an env var pointing to the settings module.
         # DEV: This will be `if dsd_config.wagtail_project` shortly.
         if dsd_config.settings_path.parts[-2:] == ("settings", "production.py"):
             railway_utils.set_wagtail_env_vars()
 
-        railway_utils.ensure_pg_env_vars()
         railway_utils.redeploy_project()
         self.deployed_url = railway_utils.generate_domain()
         railway_utils.check_status_200(self.deployed_url)
@@ -166,5 +182,7 @@ class PlatformDeployer:
                 self.deployed_url, plugin_config.project_id
             )
         else:
-            msg = platform_msgs.success_msg(log_output=dsd_config.log_output)
+            msg = platform_msgs.success_msg(
+                plugin_config, log_output=dsd_config.log_output
+            )
         plugin_utils.write_output(msg)

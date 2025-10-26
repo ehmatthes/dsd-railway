@@ -23,7 +23,7 @@ class PluginConfig:
 
     def __init__(self):
         self.automate_all_supported = True
-        self.confirm_automate_all_msg = platform_msgs.confirm_automate_all
+        self.confirm_automate_all_msg = platform_msgs.confirm_automate_all()
         self.platform_name = "Railway"
 
 

@@ -36,7 +36,11 @@ def test_deployment(tmp_project, cli_options, request):
     python_cmd = it_utils.get_python_exe(tmp_project)
 
     # Run simple_deploy against the test project.
-    it_utils.run_simple_deploy(python_cmd, automate_all=cli_options.automate_all)
+    it_utils.run_simple_deploy(
+        python_cmd,
+        automate_all=cli_options.automate_all,
+        plugin_args_string=cli_options.plugin_args_string,
+    )
 
     # If testing Pipenv, lock after adding new packages.
     if cli_options.pkg_manager == "pipenv":
@@ -48,7 +52,7 @@ def test_deployment(tmp_project, cli_options, request):
     if cli_options.automate_all:
         project_url = platform_utils.automate_all_steps(request, app_name)
     else:
-        project_url = platform_utils.config_only_steps(request, app_name)
+        project_url = platform_utils.config_only_steps(request, app_name, cli_options)
 
     # Remote functionality test often fails if run too quickly after deployment.
     print("\nPausing 10s to let deployment finish...")

@@ -13,8 +13,10 @@ This plugin is in a pre-1.0 development phase. It has limited functionality at t
 Configuration-only deployment
 ---
 
-- Install the [Railway CLI](https://docs.railway.com/guides/cli)
-- Choose a name for your deployed project, and use it everywhere you see `<project-name>` Run the following commands:
+The following instructions set up a Postgres database. If you want to use SQLite instead, see [these instructions](tmp_docs/config_only_sqlite.md).
+
+First, install the [Railway CLI](https://docs.railway.com/guides/cli). Choose a name for your deployed project, and use it everywhere you see `<project-name>`. Run the following commands to configure your project for deployment:
+
 ```sh
 $ railway login # May need to use `railway login --browserless`
 $ pip install dsd-railway
@@ -26,7 +28,8 @@ $ git add .
 $ git commit -m "Configured for deployment to Railway."
 ```
 
-- Run the following. (You'll see a bunch of errors after `railway up`. Those errors will go away after creating the database. This is Railway's [recommended approach](https://docs.railway.com/guides/django#deploy-from-the-cli)!)
+- Now run the following to actually deploy your project to Railway. (You may see a bunch of errors, or a crashed deployment, after running `railway up`. Those errors will go away after creating the database. This is Railway's [recommended approach](https://docs.railway.com/guides/django#deploy-from-the-cli)!)
+
 ```sh
 $ railway init --name <project-name>
 $ railway up
@@ -43,7 +46,7 @@ $ railway domain --port 8080 --service <project-name>
 
 After this last command, you should see the URL for your project. You may need to wait a few minutes for the deployment to finish.
 
-If your deployment does not seem to work, you can try redeploying it:
+If your deployment doesn't seem to work, you can try redeploying it:
 
 ```sh
 $ railway redeploy --service <project-name>
@@ -52,13 +55,26 @@ $ railway redeploy --service <project-name>
 Fully automated deployment
 ---
 
-- Install the [Railway CLI](https://docs.railway.com/guides/cli)
-- Log in, using `railway login`. You may need to run `railway login --browserless`.
-- Install `dsd-railway`: `pip install dsd-railway`
-- Add `django_simple_deploy` to `INSTALLED_APPS`
-- Run `python manage.py deploy --automate-all`.
+First, install the [Railway CLI](https://docs.railway.com/guides/cli). Then run the following commands:
+
+```sh
+$ railway login # You may need to use `railway login --browserless`
+$ pip install dsd-railway
+# Add django_simple_deploy to INSTALLED_APPS.
+$ python manage.py deploy --automate-all
+```
 
 Your deployed project should appear in a new browser tab.
+
+### Using SQLite
+
+By default, a Postgres database will be used. If you prefer to use SQLite, include the `--db sqlite` argument when calling `deploy`:
+
+```sh
+$ python manage.py deploy --automate-all --db sqlite
+```
+
+This will create a persistent [Railway volume](https://docs.railway.com/reference/volumes) where the SQLite database file will be written.
 
 Destroying a project
 ---
@@ -72,4 +88,4 @@ $ python developer_resources/destroy_project.py <project-id>
 
 Be careful running this command, as it is an immediately destructive action. If you want to be more cautious, you can delete the project in your Railway dashboard. Railway schedules the project for deletion in the next 48 hours, giving you some possibility of restoring the project if you need to.
 
-If you don't know the ID of your project, you can run `railway status --json`. The ID will the first item in the JSON output.
+If you don't know the ID of your project, you can run `railway status --json`. The ID will the first item in the JSON output. You can also find the project ID in the Settings tab of the overall project; make sure you're looking at the project's Settings tab, not the service's Settings.

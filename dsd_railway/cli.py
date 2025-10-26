@@ -22,42 +22,28 @@ class PluginCLI:
             description=group_desc,
         )
 
-        # plugin_group.add_argument(
-        #     "--vm-size",
-        #     type=str,
-        #     help="Name for a preset vm-size configuration, ie `shared-cpu-2x`.",
-        #     default="",
-        # )
+        plugin_group.add_argument(
+            "--db",
+            type=str,
+            help="Specify the database to be used: postgres (default) | sqlite",
+            default="postgres",
+        )
 
 
 def validate_cli(options):
     """Validate options that were passed to CLI."""
-
-    # vm_size = options["vm_size"]
-    # _validate_vm_size(vm_size)
-
-    pass
+    db = options["db"]
+    _validate_db(db)
 
 
 # --- Helper functions ---
 
-# def _validate_vm_size(vm_size):
-#     """Validate the vm size arg that was passed."""
-#     if not vm_size:
-#         return
 
-#     if not dsd_config.unit_testing:
-#         cmd = "fly platform vm-sizes --json"
-#         cmd_parts = shlex.split(cmd)
-#         output = subprocess.run(cmd_parts, capture_output=True)
-#         allowed_sizes = list(json.loads(output.stdout).keys())
-#     else:
-#         allowed_sizes = ["shared-cup-1x", "shared-cpu-2x"]
+def _validate_db(db):
+    """Validate the db arg that was passed."""
+    if db not in ("postgres", "sqlite"):
+        msg = "The value for --db must be either `postgres` or `sqlite`."
+        raise DSDCommandError(msg)
 
-#     if vm_size not in allowed_sizes:
-#         msg = f"The vm-size {vm_size} requested is not available."
-#         msg += f"\n  Allowed sizes: {' '.join(allowed_sizes)}"
-#         raise DSDCommandError(msg)
-
-#     # vm_size is valid. Set the relevant plugin_config attribute.
-#     plugin_config.vm_size = vm_size
+    # Valid argument.
+    plugin_config.db = db

@@ -82,7 +82,7 @@ def push_project():
     try:
         plugin_utils.run_slow_command(cmd)
     except subprocess.CalledProcessError:
-        msg = "  Expected error, because no Postgres database exists yet. Continuing deployment."
+        msg = "  Expected error, because no database exists yet. Continuing deployment."
         plugin_utils.write_output(msg)
 
 
@@ -91,9 +91,25 @@ def add_database():
     msg = "  Adding a database..."
     plugin_utils.write_output(msg)
 
+    if plugin_config.db == "postgres":
+        add_postgres_db()
+    elif plugin_config.db == "sqlite":
+        add_sqlite_db()
+
+
+def add_postgres_db():
+    """Add a Postgres database to the project."""
+    msg = "  Adding a Postgres database..."
+    plugin_utils.write_output(msg)
+
+    # Add db.
     cmd = "railway add --database postgres"
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
+
+    # Set required env vars, and make sure they're readable.
+    set_postgres_env_vars()
+    _ensure_env_var(env_var="PGUSER", expected_value="postgres")
 
 
 def set_postgres_env_vars():
@@ -114,6 +130,36 @@ def set_postgres_env_vars():
     plugin_utils.write_output(output)
 
 
+def add_sqlite_db():
+    """Add a SQLite database to the project."""
+    msg = "  Adding a SQLite database..."
+    plugin_utils.write_output(msg)
+
+    # Set `RAILWAY_RUN_UID` env var.
+    msg = "  Setting `RAILWAY_RUN_UID` env var."
+    plugin_utils.write_output(msg)
+
+    cmd = f'railway variables --set "RAILWAY_RUN_UID=0" --service {dsd_config.deployed_project_name} --skip-deploys'
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
+    # Link project again; we linked earlier but for some reason get an error
+    # when trying to create a volume, saying to link first.
+    msg = "  Linking project again before creating volume..."
+    plugin_utils.write_output(msg)
+
+    link_project()
+
+    # Add db.
+    cmd = f"railway volume add --mount-path /app/data"
+    output = plugin_utils.run_quick_command(cmd)
+    plugin_utils.write_output(output)
+
+    # Make sure env vars are readable.
+    _ensure_env_var(env_var="RAILWAY_VOLUME_MOUNT_PATH", expected_value="/app/data")
+    _ensure_env_var(env_var="RAILWAY_RUN_UID", expected_value="0")
+
+
 def set_wagtail_env_vars():
     """Set env vars required by most Wagtail projects."""
     plugin_utils.write_output(
@@ -128,30 +174,6 @@ def set_wagtail_env_vars():
     cmd = f'railway variables --set "DJANGO_SETTINGS_MODULE={dotted_settings_path}" --service {dsd_config.deployed_project_name}'
     output = plugin_utils.run_quick_command(cmd)
     plugin_utils.write_output(output)
-
-
-def ensure_pg_env_vars():
-    """Make sure the Postgres environment variables are active.
-
-    Django settings will be incorrect if the environment variables for the app
-    are not yet referencing the database config. Make sure the references are
-    active before proceeding.
-    """
-    pause = 10
-    timeout = 60
-    for _ in range(int(timeout / pause)):
-        msg = "  Reading env vars..."
-        plugin_utils.write_output(msg)
-
-        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
-        output = plugin_utils.run_quick_command(cmd)
-        plugin_utils.write_output(output)
-
-        output_json = json.loads(output.stdout.decode())
-        if output_json["PGUSER"] == "postgres":
-            break
-
-        time.sleep(pause)
 
 
 def redeploy_project():
@@ -188,3 +210,36 @@ def check_status_200(url):
             break
 
         time.sleep(pause)
+
+
+# --- Helper functions ---
+
+
+def _ensure_env_var(env_var, expected_value):
+    """Ensure that an environment variable returns a specific value.
+
+    This is meant to run right after setting the variable, to make sure no
+    further action is taken until the variable reads correctly.
+    """
+    pause = 10
+    timeout = 60
+    for _ in range(int(timeout / pause)):
+        msg = "  Reading env vars..."
+        plugin_utils.write_output(msg)
+
+        cmd = f"railway variables --service {dsd_config.deployed_project_name} --json"
+        output = plugin_utils.run_quick_command(cmd)
+        plugin_utils.write_output(output)
+
+        output_json = json.loads(output.stdout.decode())
+        if output_json[env_var] == expected_value:
+            msg = f"  {env_var}: {expected_value}"
+            plugin_utils.write_output(msg)
+
+            return
+
+        time.sleep(pause)
+
+    # Environment variable is not reading as expected.
+    msg = f"Environment variable {env_var} does not have the value {expected_value}."
+    raise DSDCommandError(msg)
