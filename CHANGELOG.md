@@ -1,6 +1,21 @@
 Changelog: dsd-<platformname>
 ===
 
+0.2 - Support SQLite
+
+Supports both Postgres and SQLite deployments.
+
+### 0.2.0
+
+#### External changes
+
+- Adds new CLI argument: `--db <postgres|sqlite>` (defaults to `postgres`)
+- 
+
+#### Internal changes
+
+- Lots of refactoring, not worth detailing in this pre-1.0 release.
+
 0.1 - Provisional support for deployments
 ---
 
